@@ -33,10 +33,6 @@
             text-decoration: none;
         }
 
-        .back:hover {
-            text-decoration: underline;
-        }
-
         label {
             display: block;
             margin-top: 20px;
@@ -44,8 +40,7 @@
             font-weight: bold;
         }
 
-        input,
-        textarea {
+        input, textarea {
             width: 100%;
             padding: 12px;
             box-sizing: border-box;
@@ -74,6 +69,11 @@
         button:hover {
             background-color: #555;
         }
+
+        .category {
+            color: #666;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 
@@ -81,12 +81,14 @@
 
 <header>
     <h1>Create a Post</h1>
-    <p>Start a new discussion.</p>
+    <p id="categoryText">Start a new discussion.</p>
 </header>
 
 <div class="container">
 
-    <a class="back" href="general.html">← Back to General Discussion</a>
+    <a class="back" id="backLink" href="index.html">← Back to Forum</a>
+
+    <h2 id="categoryTitle">New Post</h2>
 
     <form id="postForm">
 
@@ -106,6 +108,42 @@
 </div>
 
 <script>
+
+const params = new URLSearchParams(window.location.search);
+
+const category = params.get("category") || "general";
+
+const categories = {
+    general: {
+        name: "General Discussion",
+        file: "general.html",
+        storage: "forumPosts"
+    },
+
+    gaming: {
+        name: "Gaming",
+        file: "gaming.html",
+        storage: "gamingPosts"
+    },
+
+    "off-topic": {
+        name: "Off-Topic",
+        file: "off-topic.html",
+        storage: "offTopicPosts"
+    }
+};
+
+const selectedCategory = categories[category] || categories.general;
+
+document.getElementById("categoryText").textContent =
+    "Create a post in " + selectedCategory.name;
+
+document.getElementById("categoryTitle").textContent =
+    selectedCategory.name;
+
+document.getElementById("backLink").href =
+    selectedCategory.file;
+
 document.getElementById("postForm").addEventListener("submit", function(event) {
 
     event.preventDefault();
@@ -116,14 +154,19 @@ document.getElementById("postForm").addEventListener("submit", function(event) {
         content: document.getElementById("content").value
     };
 
-    let posts = JSON.parse(localStorage.getItem("forumPosts")) || [];
+    let posts =
+        JSON.parse(localStorage.getItem(selectedCategory.storage)) || [];
 
     posts.push(post);
 
-    localStorage.setItem("forumPosts", JSON.stringify(posts));
+    localStorage.setItem(
+        selectedCategory.storage,
+        JSON.stringify(posts)
+    );
 
-    window.location.href = "general.html";
+    window.location.href = selectedCategory.file;
 });
+
 </script>
 
 </body>
