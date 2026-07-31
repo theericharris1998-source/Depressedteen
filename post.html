@@ -1,0 +1,310 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Post - My Forum</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+        }
+
+        .post,
+        .reply-box,
+        .reply {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .post h1 {
+            margin-top: 0;
+        }
+
+        .username {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .content {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+
+        textarea,
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin-top: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: Arial, sans-serif;
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            margin-top: 15px;
+            background: #333;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        a {
+            color: #333;
+        }
+
+        #status {
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>My Forum</h1>
+</header>
+
+<div class="container">
+
+    <a id="backLink" href="index.html">
+        ← Back to Forum
+    </a>
+
+    <div id="post"></div>
+
+    <h2>Replies</h2>
+
+    <div id="replies"></div>
+
+    <div class="reply-box">
+
+        <h2>Write a Reply</h2>
+
+        <form id="replyForm">
+
+            <label>Username</label>
+            <input type="text" id="username" required>
+
+            <label>Reply</label>
+            <textarea id="content" required></textarea>
+
+            <button type="submit">Post Reply</button>
+
+        </form>
+
+        <p id="error"></p>
+
+    </div>
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+    "https://oumfxwatreftjyahiplr.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_DXNKHiVn5QV8DQj3ydTYlQ_zj9EZZTa";
+
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+const params =
+    new URLSearchParams(window.location.search);
+
+const postId =
+    params.get("id");
+
+
+async function loadPost() {
+
+    if (!postId) {
+
+        document.getElementById("post").innerHTML =
+            "<p>Post not found.</p>";
+
+        return;
+    }
+
+    const { data, error } = await supabaseClient
+        .from("posts")
+        .select("*")
+        .eq("id", postId)
+        .single();
+
+    if (error || !data) {
+
+        document.getElementById("post").innerHTML =
+            "<p>Post not found.</p>";
+
+        return;
+    }
+
+    document.getElementById("post").innerHTML = `
+        <div class="post">
+            <h1>${escapeHTML(data.title)}</h1>
+
+            <div class="username">
+                Posted by ${escapeHTML(data.username)}
+            </div>
+
+            <div class="content">
+                ${escapeHTML(data.content)}
+            </div>
+        </div>
+    `;
+
+    const categoryPages = {
+        general: "general.html",
+        gaming: "gaming.html",
+        "off-topic": "off-topic.html"
+    };
+
+    document.getElementById("backLink").href =
+        categoryPages[data.category] || "index.html";
+}
+
+
+async function loadReplies() {
+
+    const repliesContainer =
+        document.getElementById("replies");
+
+    const { data, error } = await supabaseClient
+        .from("replies")
+        .select("*")
+        .eq("post_id", postId)
+        .order("created_at", { ascending: true });
+
+    if (error) {
+
+        repliesContainer.innerHTML =
+            "<p>Could not load replies.</p>";
+
+        return;
+    }
+
+    if (!data || data.length === 0) {
+
+        repliesContainer.innerHTML =
+            "<p>No replies yet.</p>";
+
+        return;
+    }
+
+    repliesContainer.innerHTML = "";
+
+    data.forEach(function(reply) {
+
+        const element =
+            document.createElement("div");
+
+        element.className = "reply";
+
+        element.innerHTML = `
+            <strong>${escapeHTML(reply.username)}</strong>
+
+            <div class="content">
+                ${escapeHTML(reply.content)}
+            </div>
+        `;
+
+        repliesContainer.appendChild(element);
+
+    });
+}
+
+
+document.getElementById("replyForm")
+.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const username =
+        document.getElementById("username").value.trim();
+
+    const content =
+        document.getElementById("content").value.trim();
+
+    const errorBox =
+        document.getElementById("error");
+
+    errorBox.textContent = "";
+
+    const { error } = await supabaseClient
+        .from("replies")
+        .insert({
+            post_id: Number(postId),
+            username: username,
+            content: content
+        });
+
+    if (error) {
+
+        errorBox.textContent =
+            "Error posting reply: " + error.message;
+
+        return;
+    }
+
+    document.getElementById("content").value = "";
+
+    loadReplies();
+
+});
+
+
+function escapeHTML(text) {
+
+    const div = document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+}
+
+
+loadPost();
+loadReplies();
+
+</script>
+
+</body>
+</html>
+```
