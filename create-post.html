@@ -5,120 +5,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create a Post - My Forum</title>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-            margin: 0;
-        }
-
-        header {
-            background-color: #333;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 700px;
-            margin: 30px auto;
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-        }
-
-        label {
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-family: Arial, sans-serif;
-        }
-
-        textarea {
-            height: 180px;
-            resize: vertical;
-        }
-
-        button {
-            margin-top: 20px;
-            background-color: #333;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #555;
-        }
-
-        .back {
-            color: #333;
-        }
-    </style>
 </head>
 
 <body>
 
-<header>
-    <h1>Create a Post</h1>
-    <p>Start a new discussion.</p>
-</header>
+<h1>Create a Post</h1>
 
-<div class="container">
+<form id="postForm">
 
-    <a class="back" href="general.html">← Back to General Discussion</a>
+    <label>Username</label><br>
+    <input type="text" id="username" required><br><br>
 
-    <form id="postForm">
+    <label>Title</label><br>
+    <input type="text" id="title" required><br><br>
 
-        <label for="username">Username</label>
-        <input type="text" id="username" required>
+    <label>Post</label><br>
+    <textarea id="content" required></textarea><br><br>
 
-        <label for="title">Post Title</label>
-        <input type="text" id="title" required>
+    <button type="submit">Publish Post</button>
 
-        <label for="content">Post</label>
-        <textarea id="content" required></textarea>
-
-        <button type="submit">Publish Post</button>
-
-    </form>
-
-</div>
+</form>
 
 <script>
-    document.getElementById("postForm").addEventListener("submit", function(event) {
-        event.preventDefault();
+document.getElementById("postForm").addEventListener("submit", function(event) {
 
-        const username = document.getElementById("username").value;
-        const title = document.getElementById("title").value;
-        const content = document.getElementById("content").value;
+    event.preventDefault();
 
-        const post = {
-            username: username,
-            title: title,
-            content: content
-        };
+    const post = {
+        username: document.getElementById("username").value,
+        title: document.getElementById("title").value,
+        content: document.getElementById("content").value
+    };
 
-        let posts = JSON.parse(localStorage.getItem("forumPosts")) || [];
+    let posts = JSON.parse(localStorage.getItem("forumPosts")) || [];
 
-        posts.push(post);
+    posts.push(post);
 
-        localStorage.setItem("forumPosts", JSON.stringify(posts));
+    localStorage.setItem("forumPosts", JSON.stringify(posts));
 
-        window.location.href = "general.html";
-    });
+    window.location.href = "general.html";
+});
 </script>
 
 </body>
