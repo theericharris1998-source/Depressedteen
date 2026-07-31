@@ -57,6 +57,15 @@
             margin-top: 0;
         }
 
+        .post h2 a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .post h2 a:hover {
+            text-decoration: underline;
+        }
+
         .username {
             color: #666;
             font-size: 14px;
@@ -153,7 +162,11 @@ async function loadPosts() {
         postElement.className = "post";
 
         postElement.innerHTML = `
-            <h2>${escapeHTML(post.title)}</h2>
+            <h2>
+                <a href="post.html?id=${post.id}">
+                    ${escapeHTML(post.title)}
+                </a>
+            </h2>
 
             <div class="username">
                 Posted by ${escapeHTML(post.username)}
@@ -184,4 +197,5 @@ loadPosts();
 </body>
 </html>
 ```
+
 
