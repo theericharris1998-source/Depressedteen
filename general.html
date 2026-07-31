@@ -5,119 +5,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>General Discussion - My Forum</title>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-            margin: 0;
-        }
-
-        header {
-            background-color: #333;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 30px auto;
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-        }
-
-        .button {
-            display: inline-block;
-            background-color: #333;
-            color: white;
-            padding: 12px 18px;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 15px 0;
-        }
-
-        .button:hover {
-            background-color: #555;
-        }
-
-        .post {
-            border: 1px solid #ddd;
-            padding: 18px;
-            margin-top: 15px;
-            border-radius: 8px;
-            background-color: #fafafa;
-        }
-
-        .post h3 {
-            margin-top: 0;
-        }
-
-        .username {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .post-content {
-            margin-top: 15px;
-            white-space: pre-wrap;
-        }
-    </style>
 </head>
 
 <body>
 
-<header>
-    <h1>General Discussion</h1>
-    <p>Talk about anything.</p>
-</header>
+<h1>General Discussion</h1>
 
-<div class="container">
+<a href="index.html">← Back to Forum</a>
 
-    <a href="index.html">← Back to Forum</a>
+<br><br>
 
-    <h2>General Discussion</h2>
+<a href="create-post.html">＋ Create a Post</a>
 
-    <a class="button" href="create-post.html">＋ Create a Post</a>
+<hr>
 
-    <div id="posts"></div>
-
-</div>
+<div id="posts"></div>
 
 <script>
-    const postsContainer = document.getElementById("posts");
 
-    const posts = JSON.parse(localStorage.getItem("forumPosts")) || [];
+const postsContainer = document.getElementById("posts");
 
-    if (posts.length === 0) {
-        postsContainer.innerHTML = `
-            <div class="post">
-                <strong>No posts yet.</strong>
-                <p>Be the first person to start a discussion!</p>
-            </div>
+const posts = JSON.parse(localStorage.getItem("forumPosts")) || [];
+
+if (posts.length === 0) {
+
+    postsContainer.innerHTML = `
+        <h3>No posts yet.</h3>
+        <p>Be the first person to start a discussion!</p>
+    `;
+
+} else {
+
+    posts.reverse().forEach(function(post) {
+
+        const postElement = document.createElement("div");
+
+        postElement.innerHTML = `
+            <h2>${escapeHTML(post.title)}</h2>
+            <p><strong>Posted by:</strong> ${escapeHTML(post.username)}</p>
+            <p>${escapeHTML(post.content)}</p>
+            <hr>
         `;
-    } else {
-        posts.reverse().forEach(function(post) {
-            const postElement = document.createElement("div");
 
-            postElement.className = "post";
+        postsContainer.appendChild(postElement);
 
-            postElement.innerHTML = `
-                <h3>${escapeHTML(post.title)}</h3>
-                <div class="username">Posted by ${escapeHTML(post.username)}</div>
-                <div class="post-content">${escapeHTML(post.content)}</div>
-            `;
+    });
+}
 
-            postsContainer.appendChild(postElement);
-        });
-    }
+function escapeHTML(text) {
 
-    function escapeHTML(text) {
-        const div = document.createElement("div");
-        div.textContent = text;
-        return div.innerHTML;
-    }
+    const div = document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+}
+
 </script>
 
 </body>
