@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>General Discussion - My Forum</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         body {
@@ -63,6 +66,10 @@
             margin-top: 15px;
             white-space: pre-wrap;
         }
+
+        #status {
+            color: #666;
+        }
     </style>
 </head>
 
@@ -83,32 +90,65 @@
         ＋ Create a Post
     </a>
 
+    <p id="status">Loading posts...</p>
+
     <div id="posts"></div>
 
 </div>
 
 <script>
 
-const postsContainer = document.getElementById("posts");
+const SUPABASE_URL =
+    "https://oumfxwatreftjyahiplr.supabase.co";
 
-const posts = JSON.parse(
-    localStorage.getItem("forumPosts")
-) || [];
+const SUPABASE_KEY =
+    "sb_publishable_DXNKHiVn5QV8DQj3ydTYlQ_zj9EZZTa";
 
-if (posts.length === 0) {
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
-    postsContainer.innerHTML = `
-        <div class="post">
-            <strong>No posts yet.</strong>
-            <p>Be the first person to start a discussion!</p>
-        </div>
-    `;
+async function loadPosts() {
 
-} else {
+    const postsContainer =
+        document.getElementById("posts");
 
-    posts.slice().reverse().forEach(function(post) {
+    const status =
+        document.getElementById("status");
 
-        const postElement = document.createElement("div");
+    const { data, error } = await supabaseClient
+        .from("posts")
+        .select("*")
+        .eq("category", "general")
+        .order("created_at", { ascending: false });
+
+    if (error) {
+
+        status.textContent =
+            "Error loading posts: " + error.message;
+
+        return;
+    }
+
+    status.textContent = "";
+
+    if (!data || data.length === 0) {
+
+        postsContainer.innerHTML = `
+            <div class="post">
+                <strong>No posts yet.</strong>
+                <p>Be the first person to start a discussion!</p>
+            </div>
+        `;
+
+        return;
+    }
+
+    data.forEach(function(post) {
+
+        const postElement =
+            document.createElement("div");
 
         postElement.className = "post";
 
@@ -125,7 +165,6 @@ if (posts.length === 0) {
         `;
 
         postsContainer.appendChild(postElement);
-
     });
 }
 
@@ -138,10 +177,10 @@ function escapeHTML(text) {
     return div.innerHTML;
 }
 
+loadPosts();
+
 </script>
 
 </body>
 </html>
 ```
-
-
