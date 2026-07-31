@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create a Post - My Forum</title>
+
+    <title>Gaming - My Forum</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         body {
@@ -21,54 +24,51 @@
         }
 
         .container {
-            max-width: 700px;
+            max-width: 800px;
             margin: 30px auto;
             background: white;
             padding: 25px;
             border-radius: 10px;
         }
 
-        .back {
-            color: #333;
-            text-decoration: none;
-        }
-
-        label {
-            display: block;
-            margin-top: 20px;
-            margin-bottom: 7px;
-            font-weight: bold;
-        }
-
-        input,
-        textarea {
-            width: 100%;
-            padding: 12px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-family: Arial, sans-serif;
-            font-size: 15px;
-        }
-
-        textarea {
-            height: 180px;
-            resize: vertical;
-        }
-
-        button {
-            margin-top: 20px;
+        .button {
+            display: inline-block;
             background-color: #333;
             color: white;
-            border: none;
-            padding: 12px 20px;
+            padding: 12px 18px;
+            text-decoration: none;
             border-radius: 6px;
-            cursor: pointer;
-            font-size: 15px;
+            margin: 15px 0;
         }
 
-        button:hover {
+        .button:hover {
             background-color: #555;
+        }
+
+        .post {
+            border: 1px solid #ddd;
+            padding: 18px;
+            margin-top: 15px;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+
+        .post h2 {
+            margin-top: 0;
+        }
+
+        .username {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .post-content {
+            margin-top: 15px;
+            white-space: pre-wrap;
+        }
+
+        #status {
+            color: #666;
         }
     </style>
 </head>
@@ -76,116 +76,112 @@
 <body>
 
 <header>
-    <h1>Create a Post</h1>
-    <p id="categoryText">Start a new discussion.</p>
+    <h1>Gaming</h1>
+    <p>Discuss games, gaming news, and everything gaming-related.</p>
 </header>
 
 <div class="container">
 
-    <a class="back" id="backLink" href="index.html">
-        ← Back to Forum
+    <a href="index.html">← Back to Forum</a>
+
+    <h2>Gaming</h2>
+
+    <a class="button" href="create-post.html?category=gaming">
+        ＋ Create a Post
     </a>
 
-    <h2 id="categoryTitle">New Post</h2>
+    <p id="status">Loading posts...</p>
 
-    <form id="postForm">
-
-        <label for="username">Username</label>
-        <input
-            type="text"
-            id="username"
-            placeholder="Enter your username"
-            required
-        >
-
-        <label for="title">Post Title</label>
-        <input
-            type="text"
-            id="title"
-            placeholder="Enter a title"
-            required
-        >
-
-        <label for="content">Post</label>
-        <textarea
-            id="content"
-            placeholder="Write your post here..."
-            required
-        ></textarea>
-
-        <button type="submit">Publish Post</button>
-
-    </form>
+    <div id="posts"></div>
 
 </div>
 
 <script>
 
-const params = new URLSearchParams(window.location.search);
+const SUPABASE_URL =
+    "https://oumfxwatreftjyahiplr.supabase.co";
 
-const category = params.get("category");
+const SUPABASE_KEY =
+    "sb_publishable_DXNKHiVn5QV8DQj3ydTYlQ_zj9EZZTa";
 
-const categoryInfo = {
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
-    general: {
-        name: "General Discussion",
-        page: "general.html",
-        storage: "forumPosts"
-    },
+async function loadPosts() {
 
-    gaming: {
-        name: "Gaming",
-        page: "gaming.html",
-        storage: "gamingPosts"
-    },
+    const postsContainer =
+        document.getElementById("posts");
 
-    "off-topic": {
-        name: "Off-Topic",
-        page: "off-topic.html",
-        storage: "offTopicPosts"
+    const status =
+        document.getElementById("status");
+
+    const { data, error } = await supabaseClient
+        .from("posts")
+        .select("*")
+        .eq("category", "gaming")
+        .order("created_at", { ascending: false });
+
+    if (error) {
+
+        status.textContent =
+            "Error loading posts: " + error.message;
+
+        return;
     }
 
-};
+    status.textContent = "";
 
-const selected = categoryInfo[category] || categoryInfo.general;
+    if (!data || data.length === 0) {
 
-document.getElementById("categoryText").textContent =
-    "Create a post in " + selected.name;
+        postsContainer.innerHTML = `
+            <div class="post">
+                <strong>No posts yet.</strong>
+                <p>Be the first person to start a gaming discussion!</p>
+            </div>
+        `;
 
-document.getElementById("categoryTitle").textContent =
-    selected.name;
+        return;
+    }
 
-document.getElementById("backLink").href =
-    selected.page;
+    data.forEach(function(post) {
 
+        const postElement =
+            document.createElement("div");
 
-document.getElementById("postForm").addEventListener("submit", function(event) {
+        postElement.className = "post";
 
-    event.preventDefault();
+        postElement.innerHTML = `
+            <h2>${escapeHTML(post.title)}</h2>
 
-    const post = {
-        username: document.getElementById("username").value,
-        title: document.getElementById("title").value,
-        content: document.getElementById("content").value
-    };
+            <div class="username">
+                Posted by ${escapeHTML(post.username)}
+            </div>
 
-    let posts = JSON.parse(
-        localStorage.getItem(selected.storage)
-    ) || [];
+            <div class="post-content">
+                ${escapeHTML(post.content)}
+            </div>
+        `;
 
-    posts.push(post);
+        postsContainer.appendChild(postElement);
+    });
+}
 
-    localStorage.setItem(
-        selected.storage,
-        JSON.stringify(posts)
-    );
+function escapeHTML(text) {
 
-    window.location.href = selected.page;
+    const div = document.createElement("div");
 
-});
+    div.textContent = text;
+
+    return div.innerHTML;
+}
+
+loadPosts();
 
 </script>
 
 </body>
 </html>
 ```
+
