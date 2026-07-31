@@ -153,7 +153,21 @@ async function loadPosts() {
         postElement.className = "post";
 
         postElement.innerHTML = `
-            <h2>${escapeHTML(post.title)}</h2>
+          postElement.innerHTML = `
+    <h2>
+        <a href="post.html?id=${post.id}">
+            ${escapeHTML(post.title)}
+        </a>
+    </h2>
+
+    <div class="username">
+        Posted by ${escapeHTML(post.username)}
+    </div>
+
+    <div class="post-content">
+        ${escapeHTML(post.content)}
+    </div>
+`;
 
             <div class="username">
                 Posted by ${escapeHTML(post.username)}
