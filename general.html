@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>General Discussion - My Forum</title>
+    <title>Gaming - My Forum</title>
 
     <style>
         body {
@@ -69,15 +69,15 @@
 <body>
 
 <header>
-    <h1>General Discussion</h1>
-    <p>Talk about anything.</p>
+    <h1>Gaming</h1>
+    <p>Discuss games, gaming news, and everything gaming-related.</p>
 </header>
 
 <div class="container">
 
     <a href="index.html">← Back to Forum</a>
 
-    <h2>General Discussion</h2>
+    <h2>Gaming</h2>
 
     <a class="button" href="create-post.html">＋ Create a Post</a>
 
@@ -89,14 +89,14 @@
 
 const postsContainer = document.getElementById("posts");
 
-const posts = JSON.parse(localStorage.getItem("forumPosts")) || [];
+const posts = JSON.parse(localStorage.getItem("gamingPosts")) || [];
 
 if (posts.length === 0) {
 
     postsContainer.innerHTML = `
         <div class="post">
             <strong>No posts yet.</strong>
-            <p>Be the first person to start a discussion!</p>
+            <p>Be the first person to start a gaming discussion!</p>
         </div>
     `;
 
