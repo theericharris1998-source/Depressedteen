@@ -28,8 +28,25 @@
             border-radius: 10px;
         }
 
-        a {
-            color: #333;
+        .button {
+            display: inline-block;
+            background-color: #333;
+            color: white;
+            padding: 12px 18px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .button:hover {
+            background-color: #555;
+        }
+
+        .post-box {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 6px;
         }
     </style>
 </head>
@@ -42,11 +59,18 @@
     </header>
 
     <div class="container">
+
         <a href="index.html">← Back to Forum</a>
 
         <h2>General Discussion</h2>
 
-        <p>No posts yet.</p>
+        <a class="button" href="#">＋ Create a Post</a>
+
+        <div class="post-box">
+            <strong>No posts yet.</strong>
+            <p>Be the first person to start a discussion!</p>
+        </div>
+
     </div>
 
 </body>
