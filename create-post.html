@@ -229,22 +229,15 @@ const selected =
     categoryInfo.general;
 
 
-document
-    .getElementById("categoryText")
-    .textContent =
-    "Create a post in " +
+document.getElementById("categoryText").textContent =
+    "Create a post in " + selected.name;
+
+
+document.getElementById("categoryTitle").textContent =
     selected.name;
 
 
-document
-    .getElementById("categoryTitle")
-    .textContent =
-    selected.name;
-
-
-document
-    .getElementById("backLink")
-    .href =
+document.getElementById("backLink").href =
     selected.page;
 
 
@@ -265,35 +258,13 @@ async function checkLogin() {
     const {
         data: {
             user
-        },
-        error: userError
+        }
     } =
         await supabaseClient.auth.getUser();
 
 
     loading.style.display =
         "none";
-
-
-    if (userError) {
-
-        loginMessage.style.display =
-            "block";
-
-        loginMessage.innerHTML = `
-
-            <h2>Could not check your account</h2>
-
-            <p>
-                ${escapeHTML(
-                    userError.message
-                )}
-            </p>
-
-        `;
-
-        return;
-    }
 
 
     if (!user) {
@@ -306,66 +277,15 @@ async function checkLogin() {
 
 
     /*
-     * Get the username from profiles.
+     * Get username directly from
+     * Supabase account metadata.
      */
 
-    const {
-        data: profile,
-        error: profileError
-    } =
-        await supabaseClient
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .maybeSingle();
+    const username =
+        user.user_metadata?.username;
 
 
-    if (profileError) {
-
-        loginMessage.style.display =
-            "block";
-
-        loginMessage.innerHTML = `
-
-            <h2>Could not load your profile</h2>
-
-            <p>
-                ${escapeHTML(
-                    profileError.message
-                )}
-            </p>
-
-            <p>
-                Your account is logged in, but
-                the profile could not be read.
-            </p>
-
-        `;
-
-        return;
-    }
-
-
-    if (!profile) {
-
-        loginMessage.style.display =
-            "block";
-
-        loginMessage.innerHTML = `
-
-            <h2>Profile not found</h2>
-
-            <p>
-                No profile was found for this account.
-            </p>
-
-        `;
-
-        return;
-    }
-
-
-    if (!profile.username) {
+    if (!username) {
 
         loginMessage.style.display =
             "block";
@@ -375,9 +295,12 @@ async function checkLogin() {
             <h2>Username not found</h2>
 
             <p>
-                Your profile exists, but it does not
-                have a username.
+                Your account does not have a username.
             </p>
+
+            <a href="account.html">
+                Go to My Account
+            </a>
 
         `;
 
@@ -392,8 +315,7 @@ async function checkLogin() {
     document
         .getElementById("usernameDisplay")
         .textContent =
-        "Posting as: " +
-        profile.username;
+        "Posting as: " + username;
 
 }
 
@@ -449,13 +371,12 @@ document
             const {
                 data: {
                     user
-                },
-                error: userError
+                }
             } =
                 await supabaseClient.auth.getUser();
 
 
-            if (userError || !user) {
+            if (!user) {
 
                 errorBox.textContent =
                     "You must be logged in to post.";
@@ -464,44 +385,14 @@ document
             }
 
 
-            /*
-             * Get current username.
-             */
-
-            const {
-                data: profile,
-                error: profileError
-            } =
-                await supabaseClient
-                .from("profiles")
-                .select("username")
-                .eq("id", user.id)
-                .maybeSingle();
+            const username =
+                user.user_metadata?.username;
 
 
-            if (profileError) {
+            if (!username) {
 
                 errorBox.textContent =
-                    "Could not load your profile: " +
-                    profileError.message;
-
-                return;
-            }
-
-
-            if (!profile) {
-
-                errorBox.textContent =
-                    "Your profile could not be found.";
-
-                return;
-            }
-
-
-            if (!profile.username) {
-
-                errorBox.textContent =
-                    "Your profile does not have a username.";
+                    "Your account does not have a username.";
 
                 return;
             }
@@ -525,7 +416,7 @@ document
                         user.id,
 
                     username:
-                        profile.username,
+                        username,
 
                     title:
                         title,
@@ -562,21 +453,6 @@ document
     );
 
 
-/* ESCAPE HTML */
-
-function escapeHTML(text) {
-
-    const div =
-        document.createElement("div");
-
-    div.textContent =
-        text || "";
-
-    return div.innerHTML;
-
-}
-
-
 checkLogin();
 
 </script>
@@ -584,5 +460,6 @@ checkLogin();
 </body>
 </html>
 ```
+
 
 
