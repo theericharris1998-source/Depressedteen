@@ -26,23 +26,17 @@
         .container {
             max-width: 800px;
             margin: 30px auto;
-            background: white;
             padding: 25px;
-            border-radius: 10px;
-        }
-
-        .back {
-            color: #333;
-            text-decoration: none;
         }
 
         .post,
-        .reply {
+        .reply,
+        .reply-box {
+            background: white;
             border: 1px solid #ddd;
-            padding: 20px;
-            margin-top: 20px;
             border-radius: 8px;
-            background-color: #fafafa;
+            padding: 20px;
+            margin-bottom: 20px;
         }
 
         .post h1 {
@@ -59,12 +53,14 @@
             white-space: pre-wrap;
         }
 
-        .reply-box {
-            margin-top: 30px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background: white;
+        .reply-box h2 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
         }
 
         input,
@@ -84,12 +80,6 @@
             resize: vertical;
         }
 
-        label {
-            display: block;
-            margin-top: 15px;
-            font-weight: bold;
-        }
-
         button {
             margin-top: 15px;
             background-color: #333;
@@ -105,13 +95,23 @@
             background-color: #555;
         }
 
+        button:disabled {
+            background-color: #888;
+            cursor: not-allowed;
+        }
+
+        a {
+            color: #333;
+        }
+
+        #status,
+        #replyStatus {
+            color: #666;
+        }
+
         #error {
             color: #b00020;
             margin-top: 15px;
-        }
-
-        #status {
-            color: #666;
         }
     </style>
 </head>
@@ -124,7 +124,7 @@
 
 <div class="container">
 
-    <a class="back" id="backLink" href="index.html">
+    <a id="backLink" href="index.html">
         ← Back to Forum
     </a>
 
@@ -135,7 +135,7 @@
     <h2>Replies</h2>
 
     <div id="replies">
-        <p>Loading replies...</p>
+        <p id="replyStatus">Loading replies...</p>
     </div>
 
     <div class="reply-box">
@@ -145,6 +145,7 @@
         <form id="replyForm">
 
             <label for="username">Username</label>
+
             <input
                 type="text"
                 id="username"
@@ -152,12 +153,13 @@
             >
 
             <label for="content">Reply</label>
+
             <textarea
                 id="content"
                 required
             ></textarea>
 
-            <button type="submit">
+            <button id="replyButton" type="submit">
                 Post Reply
             </button>
 
@@ -188,7 +190,7 @@ const params =
     new URLSearchParams(window.location.search);
 
 const postId =
-    params.get("id");
+    Number(params.get("id"));
 
 
 const categoryPages = {
@@ -261,7 +263,6 @@ async function loadReplies() {
     const repliesContainer =
         document.getElementById("replies");
 
-
     const { data, error } =
         await supabaseClient
         .from("replies")
@@ -275,7 +276,9 @@ async function loadReplies() {
     if (error) {
 
         repliesContainer.innerHTML =
-            "<p>Could not load replies.</p>";
+            "<p>Could not load replies: " +
+            escapeHTML(error.message) +
+            "</p>";
 
         return;
     }
@@ -318,83 +321,91 @@ async function loadReplies() {
 }
 
 
-document.getElementById("replyForm")
-.addEventListener("submit", async function(event) {
+document
+    .getElementById("replyForm")
+    .addEventListener("submit", async function(event) {
 
-    event.preventDefault();
-
-
-    const username =
-        document.getElementById("username")
-        .value
-        .trim();
-
-    const content =
-        document.getElementById("content")
-        .value
-        .trim();
-
-    const errorBox =
-        document.getElementById("error");
+        event.preventDefault();
 
 
-    errorBox.textContent = "";
+        const username =
+            document
+            .getElementById("username")
+            .value
+            .trim();
 
 
-    if (!username || !content) {
-
-        errorBox.textContent =
-            "Please enter a username and reply.";
-
-        return;
-    }
+        const content =
+            document
+            .getElementById("content")
+            .value
+            .trim();
 
 
-    const button =
-        document.querySelector("#replyForm button");
-
-    button.disabled = true;
-
-    button.textContent = "Posting...";
+        const errorBox =
+            document.getElementById("error");
 
 
-    const { error } =
-        await supabaseClient
-        .from("replies")
-        .insert({
-
-            post_id: Number(postId),
-
-            username: username,
-
-            content: content
-
-        });
+        const button =
+            document.getElementById("replyButton");
 
 
-    if (error) {
+        errorBox.textContent = "";
 
-        errorBox.textContent =
-            "Error posting reply: " +
-            error.message;
+
+        if (!username || !content) {
+
+            errorBox.textContent =
+                "Please enter a username and reply.";
+
+            return;
+        }
+
+
+        button.disabled = true;
+
+        button.textContent = "Posting...";
+
+
+        const { error } =
+            await supabaseClient
+            .from("replies")
+            .insert({
+
+                post_id: postId,
+
+                username: username,
+
+                content: content
+
+            });
+
+
+        if (error) {
+
+            errorBox.textContent =
+                "Error posting reply: " +
+                error.message;
+
+            button.disabled = false;
+
+            button.textContent = "Post Reply";
+
+            return;
+        }
+
+
+        document
+            .getElementById("content")
+            .value = "";
+
 
         button.disabled = false;
 
         button.textContent = "Post Reply";
 
-        return;
-    }
 
-
-    document.getElementById("content").value = "";
-
-
-    button.disabled = false;
-
-    button.textContent = "Post Reply";
-
-
-    await loadReplies();
+        await loadReplies();
 
 });
 
@@ -420,4 +431,5 @@ loadReplies();
 </body>
 </html>
 ```
+
 
