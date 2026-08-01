@@ -64,12 +64,22 @@
             background-color: #555;
         }
 
+        button:disabled {
+            background-color: #888;
+            cursor: not-allowed;
+        }
+
         a {
             color: #333;
         }
 
         #error {
             color: #b00020;
+            margin-top: 15px;
+        }
+
+        #success {
+            color: #267326;
             margin-top: 15px;
         }
     </style>
@@ -93,31 +103,27 @@
         Loading account...
     </div>
 
-    <div id="profile" class="profile" style="display:none;">
+    <div id="profile" class="profile" style="display: none;">
 
         <div class="label">
             Username
         </div>
 
-        <div
-            class="value"
-            id="username"
-        ></div>
+        <div class="value" id="username"></div>
 
         <div class="label">
             Email
         </div>
 
-        <div
-            class="value"
-            id="email"
-        ></div>
+        <div class="value" id="email"></div>
 
         <button id="logoutButton">
             Log Out
         </button>
 
         <div id="error"></div>
+
+        <div id="success"></div>
 
     </div>
 
@@ -151,13 +157,15 @@ async function loadAccount() {
         data: {
             user
         }
-    } = await supabaseClient.auth.getUser();
+    } =
+        await supabaseClient.auth.getUser();
 
 
     if (!user) {
 
         loading.innerHTML = `
             <p>You are not logged in.</p>
+
             <a href="login.html">
                 Log in or create an account
             </a>
@@ -167,7 +175,10 @@ async function loadAccount() {
     }
 
 
-    const { data, error } =
+    const {
+        data,
+        error
+    } =
         await supabaseClient
         .from("profiles")
         .select("username")
@@ -177,28 +188,37 @@ async function loadAccount() {
 
     if (error || !data) {
 
-        loading.textContent =
-            "Could not load your profile.";
+        loading.innerHTML = `
+            <p>Could not load your profile.</p>
+            <p>Please log out and log back in.</p>
+        `;
 
         return;
     }
 
 
-    loading.style.display = "none";
+    loading.style.display =
+        "none";
 
-    profile.style.display = "block";
+    profile.style.display =
+        "block";
 
 
-    document.getElementById("username").textContent =
+    document
+        .getElementById("username")
+        .textContent =
         data.username;
 
-    document.getElementById("email").textContent =
-        user.email;
+
+    document
+        .getElementById("email")
+        .textContent =
+        user.email || "No email available";
 
 }
 
 
-/* Log out */
+/* LOG OUT */
 
 document
     .getElementById("logoutButton")
@@ -206,19 +226,42 @@ document
         "click",
         async function() {
 
+            const button =
+                document.getElementById("logoutButton");
+
             const errorBox =
                 document.getElementById("error");
 
+            const successBox =
+                document.getElementById("success");
 
-            const { error } =
+
+            errorBox.textContent = "";
+
+            successBox.textContent =
+                "Logging out...";
+
+            button.disabled =
+                true;
+
+
+            const {
+                error
+            } =
                 await supabaseClient.auth.signOut();
 
 
             if (error) {
 
+                successBox.textContent =
+                    "";
+
                 errorBox.textContent =
                     "Error logging out: " +
                     error.message;
+
+                button.disabled =
+                    false;
 
                 return;
             }
@@ -238,3 +281,4 @@ loadAccount();
 </body>
 </html>
 ```
+
