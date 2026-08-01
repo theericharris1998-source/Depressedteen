@@ -179,7 +179,9 @@ const supabaseClient =
     );
 
 
-/* Create profile if needed */
+/* --------------------------------
+   CREATE PROFILE AFTER LOGIN
+-------------------------------- */
 
 async function createProfileIfNeeded() {
 
@@ -193,30 +195,39 @@ async function createProfileIfNeeded() {
         return;
     }
 
-
-    const { data: existingProfile } =
-        await supabaseClient
+    const {
+        data: existingProfile,
+        error: profileCheckError
+    } = await supabaseClient
         .from("profiles")
         .select("id")
         .eq("id", user.id)
         .maybeSingle();
 
+    if (profileCheckError) {
+
+        console.log(
+            "Profile check error:",
+            profileCheckError.message
+        );
+
+        return;
+    }
 
     if (existingProfile) {
         return;
     }
 
-
     const username =
         user.user_metadata?.username;
-
 
     if (!username) {
         return;
     }
 
-
-    await supabaseClient
+    const {
+        error
+    } = await supabaseClient
         .from("profiles")
         .insert({
 
@@ -225,10 +236,24 @@ async function createProfileIfNeeded() {
             username: username
 
         });
+
+    if (error) {
+
+        console.log(
+            "Profile creation error:",
+            error.message
+        );
+
+        return;
+    }
+
+    console.log("Profile created successfully.");
 }
 
 
-/* LOGIN */
+/* --------------------------------
+   LOGIN
+-------------------------------- */
 
 document
 .getElementById("loginForm")
@@ -255,14 +280,15 @@ document
         const button =
             document.getElementById("loginButton");
 
-
         message.textContent =
             "Logging in...";
 
         button.disabled = true;
 
 
-        const { error } =
+        const {
+            error
+        } =
             await supabaseClient.auth.signInWithPassword({
 
                 email: email,
@@ -302,7 +328,9 @@ document
 );
 
 
-/* SIGN UP */
+/* --------------------------------
+   CREATE ACCOUNT
+-------------------------------- */
 
 document
 .getElementById("signupForm")
@@ -311,7 +339,6 @@ document
     async function(event) {
 
         event.preventDefault();
-
 
         const username =
             document
@@ -329,7 +356,6 @@ document
             document
             .getElementById("signupPassword")
             .value;
-
 
         const message =
             document.getElementById("message");
@@ -354,6 +380,7 @@ document
 
 
         const {
+            data,
             error
         } =
             await supabaseClient.auth.signUp({
@@ -363,6 +390,9 @@ document
                 password: password,
 
                 options: {
+
+                    emailRedirectTo:
+                        "https://theericharris1998-source.github.io/Depressedteen/index.html",
 
                     data: {
 
@@ -390,13 +420,43 @@ document
         }
 
 
+        /*
+         * If email confirmation is enabled,
+         * there may not be a session yet.
+         */
+
+        if (!data.session) {
+
+            message.textContent =
+                "Account created! Check your email, confirm your account, then log in.";
+
+            button.disabled = false;
+
+            button.textContent =
+                "Create Account";
+
+            return;
+        }
+
+
+        /*
+         * If confirmation isn't required,
+         * create the profile immediately.
+         */
+
+        await createProfileIfNeeded();
+
+
         message.textContent =
-            "Account created! Check your email, confirm your account, then log in.";
+            "Account created successfully!";
 
-        button.disabled = false;
 
-        button.textContent =
-            "Create Account";
+        setTimeout(function() {
+
+            window.location.href =
+                "index.html";
+
+        }, 700);
 
     }
 );
