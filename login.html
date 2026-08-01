@@ -55,12 +55,23 @@
             background: #555;
         }
 
+        button:disabled {
+            background: #888;
+            cursor: not-allowed;
+        }
+
         #message {
             margin-top: 15px;
         }
 
         a {
             color: #333;
+        }
+
+        hr {
+            margin: 30px 0;
+            border: none;
+            border-top: 1px solid #ddd;
         }
     </style>
 </head>
@@ -79,32 +90,80 @@
     <form id="loginForm">
 
         <label>Email</label>
-        <input type="email" id="loginEmail" required>
+
+        <input
+            type="email"
+            id="loginEmail"
+            required
+        >
 
         <label>Password</label>
-        <input type="password" id="loginPassword" required>
 
-        <button type="submit">Login</button>
+        <input
+            type="password"
+            id="loginPassword"
+            required
+        >
+
+        <button
+            id="loginButton"
+            type="submit"
+        >
+            Login
+        </button>
 
     </form>
+
+
+    <hr>
+
 
     <h2>Create Account</h2>
 
     <form id="signupForm">
 
+        <label>Username</label>
+
+        <input
+            type="text"
+            id="signupUsername"
+            placeholder="Choose a username"
+            maxlength="30"
+            required
+        >
+
         <label>Email</label>
-        <input type="email" id="signupEmail" required>
+
+        <input
+            type="email"
+            id="signupEmail"
+            required
+        >
 
         <label>Password</label>
-        <input type="password" id="signupPassword" required>
 
-        <button type="submit">Create Account</button>
+        <input
+            type="password"
+            id="signupPassword"
+            minlength="6"
+            required
+        >
+
+        <button
+            id="signupButton"
+            type="submit"
+        >
+            Create Account
+        </button>
 
     </form>
 
+
     <p id="message"></p>
 
-    <a href="index.html">← Back to Forum</a>
+    <a href="index.html">
+        ← Back to Forum
+    </a>
 
 </div>
 
@@ -123,84 +182,221 @@ const supabaseClient =
     );
 
 
-document.getElementById("loginForm")
-.addEventListener("submit", async function(event) {
+/* LOGIN */
 
-    event.preventDefault();
+document
+.getElementById("loginForm")
+.addEventListener(
+    "submit",
+    async function(event) {
 
-    const email =
-        document.getElementById("loginEmail").value;
+        event.preventDefault();
 
-    const password =
-        document.getElementById("loginPassword").value;
+        const email =
+            document
+            .getElementById("loginEmail")
+            .value
+            .trim();
 
-    const message =
-        document.getElementById("message");
+        const password =
+            document
+            .getElementById("loginPassword")
+            .value;
 
-    message.textContent = "Logging in...";
+        const message =
+            document.getElementById("message");
 
-    const { error } =
-        await supabaseClient.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
+        const button =
+            document.getElementById("loginButton");
 
-    if (error) {
 
         message.textContent =
-            "Login error: " + error.message;
+            "Logging in...";
 
-        return;
-    }
-
-    message.textContent =
-        "Login successful!";
-
-    setTimeout(function() {
-        window.location.href = "index.html";
-    }, 1000);
-
-});
+        button.disabled = true;
 
 
-document.getElementById("signupForm")
-.addEventListener("submit", async function(event) {
+        const { error } =
+            await supabaseClient.auth.signInWithPassword({
 
-    event.preventDefault();
+                email: email,
 
-    const email =
-        document.getElementById("signupEmail").value;
+                password: password
 
-    const password =
-        document.getElementById("signupPassword").value;
+            });
 
-    const message =
-        document.getElementById("message");
 
-    message.textContent =
-        "Creating account...";
+        if (error) {
 
-    const { error } =
-        await supabaseClient.auth.signUp({
-            email: email,
-            password: password
-        });
+            message.textContent =
+                "Login error: " +
+                error.message;
 
-    if (error) {
+            button.disabled = false;
+
+            return;
+        }
+
 
         message.textContent =
-            "Signup error: " + error.message;
+            "Login successful!";
 
-        return;
+
+        setTimeout(function() {
+
+            window.location.href =
+                "index.html";
+
+        }, 700);
+
     }
+);
 
-    message.textContent =
-        "Account created! Check your email if confirmation is required.";
 
-});
+/* CREATE ACCOUNT */
+
+document
+.getElementById("signupForm")
+.addEventListener(
+    "submit",
+    async function(event) {
+
+        event.preventDefault();
+
+
+        const username =
+            document
+            .getElementById("signupUsername")
+            .value
+            .trim();
+
+        const email =
+            document
+            .getElementById("signupEmail")
+            .value
+            .trim();
+
+        const password =
+            document
+            .getElementById("signupPassword")
+            .value;
+
+
+        const message =
+            document.getElementById("message");
+
+        const button =
+            document.getElementById("signupButton");
+
+
+        if (username.length < 3) {
+
+            message.textContent =
+                "Username must be at least 3 characters.";
+
+            return;
+        }
+
+
+        message.textContent =
+            "Creating account...";
+
+        button.disabled = true;
+
+
+        /*
+         * First create the Supabase account.
+         */
+
+        const {
+            data,
+            error
+        } =
+            await supabaseClient.auth.signUp({
+
+                email: email,
+
+                password: password
+
+            });
+
+
+        if (error) {
+
+            message.textContent =
+                "Signup error: " +
+                error.message;
+
+            button.disabled = false;
+
+            return;
+        }
+
+
+        /*
+         * Supabase may require email confirmation.
+         * If there is no session yet, we cannot create
+         * the profile from this browser session.
+         */
+
+        if (!data.user) {
+
+            message.textContent =
+                "Account created. Check your email to continue.";
+
+            button.disabled = false;
+
+            return;
+        }
+
+
+        /*
+         * Create the user's profile.
+         */
+
+        const {
+            error: profileError
+        } =
+            await supabaseClient
+            .from("profiles")
+            .insert({
+
+                id: data.user.id,
+
+                username: username
+
+            });
+
+
+        if (profileError) {
+
+            message.textContent =
+                "Account created, but the username could not be saved: " +
+                profileError.message;
+
+            button.disabled = false;
+
+            return;
+        }
+
+
+        message.textContent =
+            "Account created successfully!";
+
+
+        setTimeout(function() {
+
+            window.location.href =
+                "index.html";
+
+        }, 1000);
+
+    }
+);
 
 </script>
 
 </body>
 </html>
 ```
+
