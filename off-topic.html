@@ -160,9 +160,12 @@ async function loadPosts() {
             document.createElement("div");
 
         postElement.className = "post";
-
-        postElement.innerHTML = `
-            <h2>
+postElement.innerHTML = `
+    <h2>
+        <a href="post.html?id=${post.id}">
+            ${escapeHTML(post.title)}
+        </a>
+    </h2>
                 <a href="post.html?id=${post.id}">
                     ${escapeHTML(post.title)}
                 </a>
