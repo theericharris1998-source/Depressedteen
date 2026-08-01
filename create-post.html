@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Create a Post - My Forum</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -95,18 +96,29 @@
 
     <h2 id="categoryTitle">New Post</h2>
 
-    <form id="postForm">
+    <p id="userInfo">Checking your account...</p>
 
-        <label for="username">Username</label>
-        <input type="text" id="username" required>
+    <form id="postForm" style="display: none;">
 
         <label for="title">Post Title</label>
-        <input type="text" id="title" required>
+
+        <input
+            type="text"
+            id="title"
+            maxlength="200"
+            required
+        >
 
         <label for="content">Post</label>
-        <textarea id="content" required></textarea>
 
-        <button type="submit">Publish Post</button>
+        <textarea
+            id="content"
+            required
+        ></textarea>
+
+        <button type="submit">
+            Publish Post
+        </button>
 
         <div id="error"></div>
 
@@ -115,19 +127,29 @@
 </div>
 
 <script>
-const SUPABASE_URL = "https://oumfxwatreftjyahiplr.supabase.co";
 
-const SUPABASE_KEY = "sb_publishable_DXNKHiVn5QV8DQj3ydTYlQ_zj9EZZTa";
+const SUPABASE_URL =
+    "https://oumfxwatreftjyahiplr.supabase.co";
 
-const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+const SUPABASE_KEY =
+    "sb_publishable_DXNKHiVn5QV8DQj3ydTYlQ_zj9EZZTa";
 
-const params = new URLSearchParams(window.location.search);
-const category = params.get("category") || "general";
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+const params =
+    new URLSearchParams(window.location.search);
+
+const category =
+    params.get("category") || "general";
+
 
 const categoryInfo = {
+
     general: {
         name: "General Discussion",
         page: "general.html"
@@ -142,50 +164,162 @@ const categoryInfo = {
         name: "Off-Topic",
         page: "off-topic.html"
     }
+
 };
 
-const selected = categoryInfo[category] || categoryInfo.general;
 
-document.getElementById("categoryText").textContent =
-    "Create a post in " + selected.name;
+const selected =
+    categoryInfo[category] ||
+    categoryInfo.general;
 
-document.getElementById("categoryTitle").textContent =
+
+document.getElementById("categoryText")
+.textContent =
+    "Create a post in " +
     selected.name;
 
-document.getElementById("backLink").href =
+
+document.getElementById("categoryTitle")
+.textContent =
+    selected.name;
+
+
+document.getElementById("backLink")
+.href =
     selected.page;
 
 
-document.getElementById("postForm").addEventListener("submit", async function(event) {
+let currentUser = null;
+let currentUsername = null;
 
-    event.preventDefault();
 
-    const username = document.getElementById("username").value.trim();
-    const title = document.getElementById("title").value.trim();
-    const content = document.getElementById("content").value.trim();
-    const errorBox = document.getElementById("error");
+async function setupPostForm() {
 
-    errorBox.textContent = "";
+    const userInfo =
+        document.getElementById("userInfo");
 
-    const { error } = await supabaseClient
-        .from("posts")
-        .insert({
-            username: username,
-            title: title,
-            content: content,
-            category: category
-        });
+    const postForm =
+        document.getElementById("postForm");
 
-    if (error) {
-        errorBox.textContent = "Error posting: " + error.message;
+
+    const {
+        data: { user },
+        error: userError
+    } = await supabaseClient.auth.getUser();
+
+
+    if (userError || !user) {
+
+        userInfo.textContent =
+            "You must be logged in to create a post.";
+
         return;
     }
 
-    window.location.href = selected.page;
+
+    currentUser = user;
+
+
+    const { data: profile, error: profileError } =
+        await supabaseClient
+        .from("profiles")
+        .select("username")
+        .eq("id", user.id)
+        .single();
+
+
+    if (profileError || !profile) {
+
+        userInfo.innerHTML =
+            'You need to choose a username first. ' +
+            '<a href="profile.html">Choose username</a>';
+
+        return;
+    }
+
+
+    currentUsername =
+        profile.username;
+
+
+    userInfo.textContent =
+        "Posting as " + currentUsername;
+
+
+    postForm.style.display =
+        "block";
+}
+
+
+setupPostForm();
+
+
+document.getElementById("postForm")
+.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+
+    const title =
+        document.getElementById("title")
+        .value
+        .trim();
+
+
+    const content =
+        document.getElementById("content")
+        .value
+        .trim();
+
+
+    const errorBox =
+        document.getElementById("error");
+
+
+    errorBox.textContent = "";
+
+
+    if (!currentUser || !currentUsername) {
+
+        errorBox.textContent =
+            "You must be logged in with a username.";
+
+        return;
+    }
+
+
+    const { error } =
+        await supabaseClient
+        .from("posts")
+        .insert({
+
+            username: currentUsername,
+
+            title: title,
+
+            content: content,
+
+            category: category
+        });
+
+
+    if (error) {
+
+        errorBox.textContent =
+            "Error posting: " +
+            error.message;
+
+        return;
+    }
+
+
+    window.location.href =
+        selected.page;
+
 });
+
 </script>
 
 </body>
 </html>
 ```
-
