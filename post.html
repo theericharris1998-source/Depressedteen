@@ -308,3 +308,206 @@ loadReplies();
 </body>
 </html>
 ```
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Post - My Forum</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        .back {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .post {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+
+        .post h2 {
+            margin-top: 0;
+        }
+
+        .username {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .content {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+
+        #status {
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>My Forum</h1>
+</header>
+
+<div class="container">
+
+    <a class="back" id="backLink" href="index.html">
+        ← Back to Forum
+    </a>
+
+    <p id="status">Loading post...</p>
+
+    <div id="post"></div>
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+    "https://oumfxwatreftjyahiplr.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_DXNKHiVn5QV8DQj3ydTYlQ_zj9EZZTa";
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+const params =
+    new URLSearchParams(window.location.search);
+
+const postId =
+    params.get("id");
+
+
+async function loadPost() {
+
+    const status =
+        document.getElementById("status");
+
+    const postContainer =
+        document.getElementById("post");
+
+
+    if (!postId) {
+
+        status.textContent =
+            "No post was specified.";
+
+        return;
+    }
+
+
+    const { data, error } =
+        await supabaseClient
+        .from("posts")
+        .select("*")
+        .eq("id", postId)
+        .single();
+
+
+    if (error) {
+
+        status.textContent =
+            "Error loading post: " +
+            error.message;
+
+        return;
+    }
+
+
+    status.textContent = "";
+
+
+    postContainer.innerHTML = `
+
+        <div class="post">
+
+            <h2>
+                ${escapeHTML(data.title)}
+            </h2>
+
+            <div class="username">
+                Posted by ${escapeHTML(data.username)}
+            </div>
+
+            <div class="content">
+                ${escapeHTML(data.content)}
+            </div>
+
+        </div>
+
+    `;
+
+
+    const categoryPages = {
+
+        general: "general.html",
+
+        gaming: "gaming.html",
+
+        "off-topic": "off-topic.html"
+
+    };
+
+
+    document.getElementById("backLink").href =
+        categoryPages[data.category] ||
+        "index.html";
+}
+
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        text;
+
+    return div.innerHTML;
+}
+
+
+loadPost();
+
+</script>
+
+</body>
+</html>
+```
+
