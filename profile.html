@@ -1,0 +1,182 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Choose Username - My Forum</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin-top: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 12px 20px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        #message {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Choose Your Username</h1>
+
+    <p>Your username will be displayed when you make posts.</p>
+
+    <form id="profileForm">
+
+        <label for="username">Username</label>
+
+        <input
+            type="text"
+            id="username"
+            maxlength="30"
+            required
+        >
+
+        <button type="submit">
+            Save Username
+        </button>
+
+    </form>
+
+    <p id="message"></p>
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+    "https://oumfxwatreftjyahiplr.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_DXNKHiVn5QV8DQj3ydTYlQ_zj9EZZTa";
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+async function checkLogin() {
+
+    const {
+        data: { user }
+    } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+
+        window.location.href = "login.html";
+
+        return null;
+    }
+
+    return user;
+}
+
+
+document.getElementById("profileForm")
+.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const message =
+        document.getElementById("message");
+
+    const username =
+        document.getElementById("username")
+        .value
+        .trim();
+
+    if (username.length < 3) {
+
+        message.textContent =
+            "Username must be at least 3 characters.";
+
+        return;
+    }
+
+    const user = await checkLogin();
+
+    if (!user) {
+        return;
+    }
+
+    message.textContent =
+        "Saving username...";
+
+    const { error } =
+        await supabaseClient
+        .from("profiles")
+        .upsert({
+            id: user.id,
+            username: username
+        });
+
+    if (error) {
+
+        message.textContent =
+            "Error: " + error.message;
+
+        return;
+    }
+
+    message.textContent =
+        "Username saved!";
+
+    setTimeout(function() {
+
+        window.location.href =
+            "index.html";
+
+    }, 1000);
+
+});
+
+
+checkLogin();
+
+</script>
+
+</body>
+</html>
+```
