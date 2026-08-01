@@ -31,7 +31,8 @@
 
         .post,
         .reply,
-        .reply-box {
+        .reply-box,
+        .login-box {
             background: white;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -97,9 +98,22 @@
             background-color: #555;
         }
 
+        button:disabled {
+            background-color: #888;
+            cursor: not-allowed;
+        }
+
+        a {
+            color: #333;
+        }
+
         #error {
             color: #b00020;
             margin-top: 15px;
+        }
+
+        #loginMessage {
+            color: #555;
         }
     </style>
 </head>
@@ -126,36 +140,7 @@
         <p>Loading replies...</p>
     </div>
 
-    <div class="reply-box">
-
-        <h2>Write a Reply</h2>
-
-        <form id="replyForm">
-
-            <label for="username">Username</label>
-
-            <input
-                type="text"
-                id="username"
-                required
-            >
-
-            <label for="content">Reply</label>
-
-            <textarea
-                id="content"
-                required
-            ></textarea>
-
-            <button type="submit">
-                Post Reply
-            </button>
-
-            <div id="error"></div>
-
-        </form>
-
-    </div>
+    <div id="replyArea"></div>
 
 </div>
 
@@ -181,25 +166,24 @@ const postId =
     Number(params.get("id"));
 
 
-/* Load saved username */
+const categoryPages = {
 
-const savedUsername =
-    localStorage.getItem("forumUsername");
+    general: "general.html",
 
-if (savedUsername) {
+    gaming: "gaming.html",
 
-    document.getElementById("username").value =
-        savedUsername;
+    "off-topic": "off-topic.html"
 
-}
+};
 
 
-/* Load the main post */
+/* Load the post */
 
 async function loadPost() {
 
     const postContainer =
         document.getElementById("post");
+
 
     const { data, error } =
         await supabaseClient
@@ -241,17 +225,6 @@ async function loadPost() {
         </div>
 
     `;
-
-
-    const categoryPages = {
-
-        general: "general.html",
-
-        gaming: "gaming.html",
-
-        "off-topic": "off-topic.html"
-
-    };
 
 
     document.getElementById("backLink").href =
@@ -328,86 +301,195 @@ async function loadReplies() {
 }
 
 
-/* Post a reply */
+/* Check login status */
 
-document
-    .getElementById("replyForm")
-    .addEventListener("submit", async function(event) {
+async function setupReplyArea() {
 
-        event.preventDefault();
-
-
-        const username =
-            document
-            .getElementById("username")
-            .value
-            .trim();
+    const replyArea =
+        document.getElementById("replyArea");
 
 
-        const content =
-            document
-            .getElementById("content")
-            .value
-            .trim();
-
-
-        const errorBox =
-            document.getElementById("error");
-
-
-        errorBox.textContent = "";
-
-
-        if (!username || !content) {
-
-            errorBox.textContent =
-                "Please enter a username and reply.";
-
-            return;
+    const {
+        data: {
+            user
         }
+    } = await supabaseClient.auth.getUser();
 
 
-        /* Remember username */
+    if (!user) {
 
-        localStorage.setItem(
-            "forumUsername",
-            username
+        replyArea.innerHTML = `
+
+            <div class="login-box">
+
+                <h2>Want to reply?</h2>
+
+                <p id="loginMessage">
+                    You must be logged in to reply to posts.
+                </p>
+
+                <a href="login.html">
+                    Log in or create an account
+                </a>
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    replyArea.innerHTML = `
+
+        <div class="reply-box">
+
+            <h2>Write a Reply</h2>
+
+            <form id="replyForm">
+
+                <label for="username">
+                    Username
+                </label>
+
+                <input
+                    type="text"
+                    id="username"
+                    required
+                >
+
+                <label for="content">
+                    Reply
+                </label>
+
+                <textarea
+                    id="content"
+                    required
+                ></textarea>
+
+                <button type="submit">
+                    Post Reply
+                </button>
+
+                <div id="error"></div>
+
+            </form>
+
+        </div>
+
+    `;
+
+
+    const savedUsername =
+        localStorage.getItem("forumUsername");
+
+
+    if (savedUsername) {
+
+        document.getElementById("username").value =
+            savedUsername;
+
+    }
+
+
+    document
+        .getElementById("replyForm")
+        .addEventListener(
+            "submit",
+            submitReply
         );
+}
 
 
-        const { error } =
-            await supabaseClient
-            .from("replies")
-            .insert({
+/* Submit reply */
 
-                post_id: postId,
+async function submitReply(event) {
 
-                username: username,
-
-                content: content
-
-            });
+    event.preventDefault();
 
 
-        if (error) {
-
-            errorBox.textContent =
-                "Error posting reply: " +
-                error.message;
-
-            return;
-        }
-
-
+    const username =
         document
-            .getElementById("content")
-            .value = "";
+        .getElementById("username")
+        .value
+        .trim();
 
 
-        loadReplies();
+    const content =
+        document
+        .getElementById("content")
+        .value
+        .trim();
 
-});
 
+    const errorBox =
+        document.getElementById("error");
+
+
+    if (!username || !content) {
+
+        errorBox.textContent =
+            "Please fill out both fields.";
+
+        return;
+    }
+
+
+    localStorage.setItem(
+        "forumUsername",
+        username
+    );
+
+
+    const {
+        data: {
+            user
+        }
+    } = await supabaseClient.auth.getUser();
+
+
+    if (!user) {
+
+        errorBox.textContent =
+            "You must be logged in to reply.";
+
+        return;
+    }
+
+
+    const { error } =
+        await supabaseClient
+        .from("replies")
+        .insert({
+
+            post_id: postId,
+
+            username: username,
+
+            content: content
+
+        });
+
+
+    if (error) {
+
+        errorBox.textContent =
+            "Error posting reply: " +
+            error.message;
+
+        return;
+    }
+
+
+    document.getElementById("content").value = "";
+
+
+    await loadReplies();
+
+}
+
+
+/* Escape HTML */
 
 function escapeHTML(text) {
 
@@ -421,9 +503,13 @@ function escapeHTML(text) {
 }
 
 
+/* Start */
+
 loadPost();
 
 loadReplies();
+
+setupReplyArea();
 
 </script>
 
