@@ -1,4 +1,4 @@
-```html
+```html id="l9p7s2"
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -167,7 +167,7 @@ async function loadPosts() {
 
 
     /*
-     * Get the currently logged-in user.
+     * Get the logged-in user.
      */
 
     const {
@@ -177,6 +177,10 @@ async function loadPosts() {
     } =
         await supabaseClient.auth.getUser();
 
+
+    /*
+     * Load posts.
+     */
 
     const {
         data,
@@ -212,6 +216,7 @@ async function loadPosts() {
         postsContainer.innerHTML = `
             <div class="post">
                 <strong>No posts yet.</strong>
+
                 <p>
                     Be the first person to start a discussion!
                 </p>
@@ -235,15 +240,15 @@ async function loadPosts() {
 
 
         /*
-         * Only show Edit/Delete if
-         * this post belongs to the
-         * currently logged-in user.
-         *
-         * Your posts table uses user_id
-         * to identify the owner.
+         * Only the owner of a post
+         * gets Edit/Delete buttons.
          */
 
-        if (user && post.user_id === user.id) {
+        if (
+            user &&
+            post.user_id &&
+            post.user_id === user.id
+        ) {
 
             actions = `
                 <div class="post-actions">
@@ -277,7 +282,7 @@ async function loadPosts() {
 
             <div class="username">
                 Posted by
-                ${escapeHTML(post.username)}
+                ${escapeHTML(post.username || "Unknown user")}
             </div>
 
             <div class="post-content">
@@ -298,7 +303,7 @@ async function loadPosts() {
 }
 
 
-/* EDIT POST */
+/* EDIT */
 
 function editPost(postId) {
 
@@ -309,7 +314,7 @@ function editPost(postId) {
 }
 
 
-/* DELETE POST */
+/* DELETE */
 
 async function deletePost(postId) {
 
@@ -325,12 +330,31 @@ async function deletePost(postId) {
 
 
     const {
+        data: {
+            user
+        }
+    } =
+        await supabaseClient.auth.getUser();
+
+
+    if (!user) {
+
+        alert(
+            "You must be logged in to delete a post."
+        );
+
+        return;
+    }
+
+
+    const {
         error
     } =
         await supabaseClient
         .from("posts")
         .delete()
-        .eq("id", postId);
+        .eq("id", postId)
+        .eq("user_id", user.id);
 
 
     if (error) {
@@ -357,7 +381,7 @@ function escapeHTML(text) {
         document.createElement("div");
 
     div.textContent =
-        text;
+        text || "";
 
     return div.innerHTML;
 
@@ -371,4 +395,5 @@ loadPosts();
 </body>
 </html>
 ```
+
 
