@@ -4,21 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>My Forum</title>
 
-<a href="account.html"
-   style="
-       display:inline-block;
-       background:#333;
-       color:white;
-       padding:12px 18px;
-       border-radius:6px;
-       text-decoration:none;
-       margin-bottom:20px;
-   ">
-    My Account
-</a>
-    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -40,6 +30,23 @@
             background: white;
             padding: 25px;
             border-radius: 10px;
+        }
+
+        #accountArea {
+            margin-bottom: 20px;
+        }
+
+        .account-button {
+            display: inline-block;
+            background-color: #333;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 6px;
+            text-decoration: none;
+        }
+
+        .account-button:hover {
+            background-color: #555;
         }
 
         .category {
@@ -69,30 +76,99 @@
 
 <body>
 
-    <header>
-        <h1>My Forum</h1>
-        <p>A place to talk about whatever you want.</p>
-    </header>
+<header>
+    <h1>My Forum</h1>
+    <p>A place to talk about whatever you want.</p>
+</header>
 
-    <div class="container">
-        <h2>Forum Categories</h2>
+<div class="container">
 
-        <a class="category" href="general.html">
-            <h2>General Discussion</h2>
-            <p>Talk about anything.</p>
-        </a>
-
-        <a class="category" href="gaming.html">
-            <h2>Gaming</h2>
-            <p>Discuss games, gaming news, and everything gaming-related.</p>
-        </a>
-
-        <a class="category" href="off-topic.html">
-            <h2>Off-Topic</h2>
-            <p>Talk about things that don't fit anywhere else.</p>
-        </a>
+    <div id="accountArea">
+        Loading...
     </div>
+
+    <h2>Forum Categories</h2>
+
+    <a class="category" href="general.html">
+        <h2>General Discussion</h2>
+        <p>Talk about anything.</p>
+    </a>
+
+    <a class="category" href="gaming.html">
+        <h2>Gaming</h2>
+        <p>Discuss games, gaming news, and everything gaming-related.</p>
+    </a>
+
+    <a class="category" href="off-topic.html">
+        <h2>Off-Topic</h2>
+        <p>Talk about things that don't fit anywhere else.</p>
+    </a>
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+    "https://oumfxwatreftjyahiplr.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_DXNKHiVn5QV8DQj3ydTYlQ_zj9EZZTa";
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+async function updateAccountArea() {
+
+    const accountArea =
+        document.getElementById("accountArea");
+
+
+    const {
+        data: {
+            user
+        }
+    } = await supabaseClient.auth.getUser();
+
+
+    if (user) {
+
+        accountArea.innerHTML = `
+
+            <a
+                class="account-button"
+                href="account.html"
+            >
+                My Account
+            </a>
+
+        `;
+
+    } else {
+
+        accountArea.innerHTML = `
+
+            <a
+                class="account-button"
+                href="login.html"
+            >
+                Log In / Create Account
+            </a>
+
+        `;
+
+    }
+}
+
+
+updateAccountArea();
+
+</script>
 
 </body>
 </html>
 ```
+
