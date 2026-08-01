@@ -1,0 +1,240 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Account - My Forum</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        .profile {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            background: #fafafa;
+            margin-top: 20px;
+        }
+
+        .label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .value {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        a {
+            color: #333;
+        }
+
+        #error {
+            color: #b00020;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>My Forum</h1>
+</header>
+
+<div class="container">
+
+    <a href="index.html">
+        ← Back to Forum
+    </a>
+
+    <h2>My Account</h2>
+
+    <div id="loading">
+        Loading account...
+    </div>
+
+    <div id="profile" class="profile" style="display:none;">
+
+        <div class="label">
+            Username
+        </div>
+
+        <div
+            class="value"
+            id="username"
+        ></div>
+
+        <div class="label">
+            Email
+        </div>
+
+        <div
+            class="value"
+            id="email"
+        ></div>
+
+        <button id="logoutButton">
+            Log Out
+        </button>
+
+        <div id="error"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+    "https://oumfxwatreftjyahiplr.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_DXNKHiVn5QV8DQj3ydTYlQ_zj9EZZTa";
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+async function loadAccount() {
+
+    const loading =
+        document.getElementById("loading");
+
+    const profile =
+        document.getElementById("profile");
+
+
+    const {
+        data: {
+            user
+        }
+    } = await supabaseClient.auth.getUser();
+
+
+    if (!user) {
+
+        loading.innerHTML = `
+            <p>You are not logged in.</p>
+            <a href="login.html">
+                Log in or create an account
+            </a>
+        `;
+
+        return;
+    }
+
+
+    const { data, error } =
+        await supabaseClient
+        .from("profiles")
+        .select("username")
+        .eq("id", user.id)
+        .single();
+
+
+    if (error || !data) {
+
+        loading.textContent =
+            "Could not load your profile.";
+
+        return;
+    }
+
+
+    loading.style.display = "none";
+
+    profile.style.display = "block";
+
+
+    document.getElementById("username").textContent =
+        data.username;
+
+    document.getElementById("email").textContent =
+        user.email;
+
+}
+
+
+/* Log out */
+
+document
+    .getElementById("logoutButton")
+    .addEventListener(
+        "click",
+        async function() {
+
+            const errorBox =
+                document.getElementById("error");
+
+
+            const { error } =
+                await supabaseClient.auth.signOut();
+
+
+            if (error) {
+
+                errorBox.textContent =
+                    "Error logging out: " +
+                    error.message;
+
+                return;
+            }
+
+
+            window.location.href =
+                "index.html";
+
+        }
+    );
+
+
+loadAccount();
+
+</script>
+
+</body>
+</html>
+```
