@@ -114,9 +114,7 @@
 
     </form>
 
-
     <hr>
-
 
     <h2>Create Account</h2>
 
@@ -158,7 +156,6 @@
 
     </form>
 
-
     <p id="message"></p>
 
     <a href="index.html">
@@ -180,6 +177,55 @@ const supabaseClient =
         SUPABASE_URL,
         SUPABASE_KEY
     );
+
+
+/* Create profile if needed */
+
+async function createProfileIfNeeded() {
+
+    const {
+        data: {
+            user
+        }
+    } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+        return;
+    }
+
+
+    const { data: existingProfile } =
+        await supabaseClient
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+
+    if (existingProfile) {
+        return;
+    }
+
+
+    const username =
+        user.user_metadata?.username;
+
+
+    if (!username) {
+        return;
+    }
+
+
+    await supabaseClient
+        .from("profiles")
+        .insert({
+
+            id: user.id,
+
+            username: username
+
+        });
+}
 
 
 /* LOGIN */
@@ -238,6 +284,9 @@ document
         }
 
 
+        await createProfileIfNeeded();
+
+
         message.textContent =
             "Login successful!";
 
@@ -253,7 +302,7 @@ document
 );
 
 
-/* CREATE ACCOUNT */
+/* SIGN UP */
 
 document
 .getElementById("signupForm")
@@ -298,25 +347,30 @@ document
         }
 
 
-        message.textContent =
-            "Creating account...";
-
         button.disabled = true;
 
+        button.textContent =
+            "Creating account...";
 
-        /*
-         * First create the Supabase account.
-         */
 
         const {
-            data,
             error
         } =
             await supabaseClient.auth.signUp({
 
                 email: email,
 
-                password: password
+                password: password,
+
+                options: {
+
+                    data: {
+
+                        username: username
+
+                    }
+
+                }
 
             });
 
@@ -329,67 +383,20 @@ document
 
             button.disabled = false;
 
-            return;
-        }
-
-
-        /*
-         * Supabase may require email confirmation.
-         * If there is no session yet, we cannot create
-         * the profile from this browser session.
-         */
-
-        if (!data.user) {
-
-            message.textContent =
-                "Account created. Check your email to continue.";
-
-            button.disabled = false;
-
-            return;
-        }
-
-
-        /*
-         * Create the user's profile.
-         */
-
-        const {
-            error: profileError
-        } =
-            await supabaseClient
-            .from("profiles")
-            .insert({
-
-                id: data.user.id,
-
-                username: username
-
-            });
-
-
-        if (profileError) {
-
-            message.textContent =
-                "Account created, but the username could not be saved: " +
-                profileError.message;
-
-            button.disabled = false;
+            button.textContent =
+                "Create Account";
 
             return;
         }
 
 
         message.textContent =
-            "Account created successfully!";
+            "Account created! Check your email, confirm your account, then log in.";
 
+        button.disabled = false;
 
-        setTimeout(function() {
-
-            window.location.href =
-                "index.html";
-
-        }, 1000);
+        button.textContent =
+            "Create Account";
 
     }
 );
@@ -399,4 +406,5 @@ document
 </body>
 </html>
 ```
+
 
