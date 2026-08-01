@@ -51,16 +51,12 @@
         .date {
             color: #888;
             font-size: 13px;
-            margin-top: 4px;
+            margin-top: 5px;
         }
 
         .content {
             margin-top: 20px;
             white-space: pre-wrap;
-        }
-
-        .reply-box h2 {
-            margin-top: 0;
         }
 
         label {
@@ -101,20 +97,6 @@
             background-color: #555;
         }
 
-        button:disabled {
-            background-color: #888;
-            cursor: not-allowed;
-        }
-
-        a {
-            color: #333;
-        }
-
-        #status,
-        #replyStatus {
-            color: #666;
-        }
-
         #error {
             color: #b00020;
             margin-top: 15px;
@@ -135,13 +117,13 @@
     </a>
 
     <div id="post">
-        <p id="status">Loading post...</p>
+        <p>Loading post...</p>
     </div>
 
     <h2>Replies</h2>
 
     <div id="replies">
-        <p id="replyStatus">Loading replies...</p>
+        <p>Loading replies...</p>
     </div>
 
     <div class="reply-box">
@@ -165,7 +147,7 @@
                 required
             ></textarea>
 
-            <button id="replyButton" type="submit">
+            <button type="submit">
                 Post Reply
             </button>
 
@@ -199,37 +181,25 @@ const postId =
     Number(params.get("id"));
 
 
-const categoryPages = {
-    general: "general.html",
-    gaming: "gaming.html",
-    "off-topic": "off-topic.html"
-};
+/* Load saved username */
 
+const savedUsername =
+    localStorage.getItem("forumUsername");
 
-function formatDate(dateString) {
+if (savedUsername) {
 
-    const date = new Date(dateString);
+    document.getElementById("username").value =
+        savedUsername;
 
-    return date.toLocaleString([], {
-        dateStyle: "medium",
-        timeStyle: "short"
-    });
 }
 
+
+/* Load the main post */
 
 async function loadPost() {
 
     const postContainer =
         document.getElementById("post");
-
-    if (!postId) {
-
-        postContainer.innerHTML =
-            "<p>Post not found.</p>";
-
-        return;
-    }
-
 
     const { data, error } =
         await supabaseClient
@@ -261,7 +231,7 @@ async function loadPost() {
             </div>
 
             <div class="date">
-                ${formatDate(data.created_at)}
+                Created: ${escapeHTML(data.created_at)}
             </div>
 
             <div class="content">
@@ -273,11 +243,24 @@ async function loadPost() {
     `;
 
 
+    const categoryPages = {
+
+        general: "general.html",
+
+        gaming: "gaming.html",
+
+        "off-topic": "off-topic.html"
+
+    };
+
+
     document.getElementById("backLink").href =
         categoryPages[data.category] ||
         "index.html";
 }
 
+
+/* Load replies */
 
 async function loadReplies() {
 
@@ -298,9 +281,7 @@ async function loadReplies() {
     if (error) {
 
         repliesContainer.innerHTML =
-            "<p>Could not load replies: " +
-            escapeHTML(error.message) +
-            "</p>";
+            "<p>Error loading replies.</p>";
 
         return;
     }
@@ -332,7 +313,7 @@ async function loadReplies() {
             </strong>
 
             <div class="date">
-                ${formatDate(reply.created_at)}
+                Created: ${escapeHTML(reply.created_at)}
             </div>
 
             <div class="content">
@@ -346,6 +327,8 @@ async function loadReplies() {
     });
 }
 
+
+/* Post a reply */
 
 document
     .getElementById("replyForm")
@@ -372,10 +355,6 @@ document
             document.getElementById("error");
 
 
-        const button =
-            document.getElementById("replyButton");
-
-
         errorBox.textContent = "";
 
 
@@ -388,9 +367,12 @@ document
         }
 
 
-        button.disabled = true;
+        /* Remember username */
 
-        button.textContent = "Posting...";
+        localStorage.setItem(
+            "forumUsername",
+            username
+        );
 
 
         const { error } =
@@ -413,10 +395,6 @@ document
                 "Error posting reply: " +
                 error.message;
 
-            button.disabled = false;
-
-            button.textContent = "Post Reply";
-
             return;
         }
 
@@ -426,12 +404,7 @@ document
             .value = "";
 
 
-        button.disabled = false;
-
-        button.textContent = "Post Reply";
-
-
-        await loadReplies();
+        loadReplies();
 
 });
 
@@ -457,6 +430,4 @@ loadReplies();
 </body>
 </html>
 ```
-
-
 
