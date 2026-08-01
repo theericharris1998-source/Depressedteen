@@ -50,6 +50,22 @@
             margin-bottom: 20px;
         }
 
+        .username-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #usernameInput {
+            flex: 1;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
         button {
             background-color: #333;
             color: white;
@@ -64,12 +80,44 @@
             background-color: #555;
         }
 
+        button:disabled {
+            background-color: #888;
+            cursor: not-allowed;
+        }
+
+        .edit-button {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .save-button {
+            margin-top: 5px;
+        }
+
+        .cancel-button {
+            background-color: #777;
+            margin-left: 5px;
+        }
+
+        .cancel-button:hover {
+            background-color: #666;
+        }
+
+        .hidden {
+            display: none;
+        }
+
         a {
             color: #333;
         }
 
         #error {
             color: #b00020;
+            margin-top: 15px;
+        }
+
+        #success {
+            color: #267326;
             margin-top: 15px;
         }
     </style>
@@ -103,10 +151,50 @@
             Username
         </div>
 
+        <div id="usernameDisplay" class="username-row">
+
+            <span
+                class="value"
+                id="username"
+                style="margin:0;"
+            ></span>
+
+            <button
+                class="edit-button"
+                id="editUsernameButton"
+            >
+                Edit
+            </button>
+
+        </div>
+
         <div
-            class="value"
-            id="username"
-        ></div>
+            id="usernameEdit"
+            class="hidden"
+        >
+
+            <input
+                type="text"
+                id="usernameInput"
+                maxlength="30"
+                placeholder="Enter new username"
+            >
+
+            <button
+                class="save-button"
+                id="saveUsernameButton"
+            >
+                Save
+            </button>
+
+            <button
+                class="cancel-button"
+                id="cancelUsernameButton"
+            >
+                Cancel
+            </button>
+
+        </div>
 
         <div class="label">
             Email
@@ -122,6 +210,8 @@
         </button>
 
         <div id="error"></div>
+
+        <div id="success"></div>
 
     </div>
 
@@ -141,6 +231,11 @@ const supabaseClient =
         SUPABASE_KEY
     );
 
+
+let currentUser = null;
+
+
+/* LOAD ACCOUNT */
 
 async function loadAccount() {
 
@@ -173,10 +268,8 @@ async function loadAccount() {
     }
 
 
-    /*
-     * Get username directly from the
-     * user's Supabase account metadata.
-     */
+    currentUser = user;
+
 
     const username =
         user.user_metadata?.username;
@@ -206,11 +299,235 @@ async function loadAccount() {
 
 
     document
+        .getElementById("usernameInput")
+        .value =
+        username;
+
+
+    document
         .getElementById("email")
         .textContent =
         user.email || "No email available";
 
 }
+
+
+/* EDIT USERNAME */
+
+document
+    .getElementById("editUsernameButton")
+    .addEventListener(
+        "click",
+        function() {
+
+            document
+                .getElementById("usernameDisplay")
+                .classList
+                .add("hidden");
+
+            document
+                .getElementById("usernameEdit")
+                .classList
+                .remove("hidden");
+
+            document
+                .getElementById("usernameInput")
+                .focus();
+
+        }
+    );
+
+
+/* CANCEL USERNAME EDIT */
+
+document
+    .getElementById("cancelUsernameButton")
+    .addEventListener(
+        "click",
+        function() {
+
+            document
+                .getElementById("usernameDisplay")
+                .classList
+                .remove("hidden");
+
+            document
+                .getElementById("usernameEdit")
+                .classList
+                .add("hidden");
+
+            document
+                .getElementById("usernameInput")
+                .value =
+                currentUser
+                    .user_metadata
+                    ?.username || "";
+
+        }
+    );
+
+
+/* SAVE USERNAME */
+
+document
+    .getElementById("saveUsernameButton")
+    .addEventListener(
+        "click",
+        async function() {
+
+            const input =
+                document
+                .getElementById("usernameInput");
+
+            const saveButton =
+                document
+                .getElementById("saveUsernameButton");
+
+            const errorBox =
+                document
+                .getElementById("error");
+
+            const successBox =
+                document
+                .getElementById("success");
+
+
+            const newUsername =
+                input.value.trim();
+
+
+            errorBox.textContent =
+                "";
+
+            successBox.textContent =
+                "";
+
+
+            if (newUsername.length < 3) {
+
+                errorBox.textContent =
+                    "Username must be at least 3 characters.";
+
+                return;
+            }
+
+
+            saveButton.disabled =
+                true;
+
+            saveButton.textContent =
+                "Saving...";
+
+
+            /*
+             * Update the username in
+             * Supabase Auth metadata.
+             */
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient.auth.updateUser({
+
+                    data: {
+
+                        username:
+                            newUsername
+
+                    }
+
+                });
+
+
+            if (error) {
+
+                errorBox.textContent =
+                    "Error changing username: " +
+                    error.message;
+
+                saveButton.disabled =
+                    false;
+
+                saveButton.textContent =
+                    "Save";
+
+                return;
+            }
+
+
+            /*
+             * Also update the username
+             * in the profiles table.
+             */
+
+            const {
+                error: profileError
+            } =
+                await supabaseClient
+                .from("profiles")
+                .update({
+
+                    username:
+                        newUsername
+
+                })
+                .eq(
+                    "id",
+                    currentUser.id
+                );
+
+
+            if (profileError) {
+
+                errorBox.textContent =
+                    "Username changed, but the profile could not be updated: " +
+                    profileError.message;
+
+                saveButton.disabled =
+                    false;
+
+                saveButton.textContent =
+                    "Save";
+
+                return;
+            }
+
+
+            currentUser =
+                data.user;
+
+
+            document
+                .getElementById("username")
+                .textContent =
+                newUsername;
+
+
+            document
+                .getElementById("usernameDisplay")
+                .classList
+                .remove("hidden");
+
+
+            document
+                .getElementById("usernameEdit")
+                .classList
+                .add("hidden");
+
+
+            successBox.textContent =
+                "Username updated successfully!";
+
+
+            saveButton.disabled =
+                false;
+
+            saveButton.textContent =
+                "Save";
+
+        }
+    );
 
 
 /* LOG OUT */
@@ -222,7 +539,8 @@ document
         async function() {
 
             const errorBox =
-                document.getElementById("error");
+                document
+                .getElementById("error");
 
 
             const {
@@ -255,4 +573,5 @@ loadAccount();
 </body>
 </html>
 ```
+
 
