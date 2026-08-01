@@ -151,6 +151,7 @@
                 type="text"
                 id="title"
                 required
+                maxlength="100"
             >
 
             <label for="content">
@@ -160,6 +161,7 @@
             <textarea
                 id="content"
                 required
+                maxlength="10000"
             ></textarea>
 
             <button
@@ -193,10 +195,13 @@ const supabaseClient =
 
 
 const params =
-    new URLSearchParams(window.location.search);
+    new URLSearchParams(
+        window.location.search
+    );
 
 const category =
-    params.get("category") || "general";
+    params.get("category") ||
+    "general";
 
 
 const categoryInfo = {
@@ -224,19 +229,26 @@ const selected =
     categoryInfo.general;
 
 
-document.getElementById("categoryText").textContent =
-    "Create a post in " + selected.name;
-
-
-document.getElementById("categoryTitle").textContent =
+document
+    .getElementById("categoryText")
+    .textContent =
+    "Create a post in " +
     selected.name;
 
 
-document.getElementById("backLink").href =
+document
+    .getElementById("categoryTitle")
+    .textContent =
+    selected.name;
+
+
+document
+    .getElementById("backLink")
+    .href =
     selected.page;
 
 
-/* Check account */
+/* CHECK LOGIN */
 
 async function checkLogin() {
 
@@ -253,41 +265,29 @@ async function checkLogin() {
     const {
         data: {
             user
-        }
-    } = await supabaseClient.auth.getUser();
+        },
+        error: userError
+    } =
+        await supabaseClient.auth.getUser();
 
 
-    loading.style.display = "none";
+    loading.style.display =
+        "none";
 
 
-    if (!user) {
+    if (userError) {
 
-        loginMessage.style.display = "block";
-
-        return;
-    }
-
-
-    /* Get profile */
-
-    const { data: profile, error } =
-        await supabaseClient
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .single();
-
-
-    if (error || !profile) {
-
-        loginMessage.style.display = "block";
+        loginMessage.style.display =
+            "block";
 
         loginMessage.innerHTML = `
 
-            <h2>Profile not found</h2>
+            <h2>Could not check your account</h2>
 
             <p>
-                Your account does not have a username yet.
+                ${escapeHTML(
+                    userError.message
+                )}
             </p>
 
         `;
@@ -296,16 +296,109 @@ async function checkLogin() {
     }
 
 
-    postArea.style.display = "block";
+    if (!user) {
+
+        loginMessage.style.display =
+            "block";
+
+        return;
+    }
 
 
-    document.getElementById("usernameDisplay").textContent =
-        "Posting as: " + profile.username;
+    /*
+     * Get the username from profiles.
+     */
+
+    const {
+        data: profile,
+        error: profileError
+    } =
+        await supabaseClient
+        .from("profiles")
+        .select("username")
+        .eq("id", user.id)
+        .maybeSingle();
+
+
+    if (profileError) {
+
+        loginMessage.style.display =
+            "block";
+
+        loginMessage.innerHTML = `
+
+            <h2>Could not load your profile</h2>
+
+            <p>
+                ${escapeHTML(
+                    profileError.message
+                )}
+            </p>
+
+            <p>
+                Your account is logged in, but
+                the profile could not be read.
+            </p>
+
+        `;
+
+        return;
+    }
+
+
+    if (!profile) {
+
+        loginMessage.style.display =
+            "block";
+
+        loginMessage.innerHTML = `
+
+            <h2>Profile not found</h2>
+
+            <p>
+                No profile was found for this account.
+            </p>
+
+        `;
+
+        return;
+    }
+
+
+    if (!profile.username) {
+
+        loginMessage.style.display =
+            "block";
+
+        loginMessage.innerHTML = `
+
+            <h2>Username not found</h2>
+
+            <p>
+                Your profile exists, but it does not
+                have a username.
+            </p>
+
+        `;
+
+        return;
+    }
+
+
+    postArea.style.display =
+        "block";
+
+
+    document
+        .getElementById("usernameDisplay")
+        .textContent =
+        "Posting as: " +
+        profile.username;
 
 }
 
 
-/* Create post */
+/* CREATE POST */
 
 document
     .getElementById("postForm")
@@ -331,14 +424,17 @@ document
 
 
             const errorBox =
-                document.getElementById("error");
+                document
+                .getElementById("error");
 
 
             const button =
-                document.getElementById("submitButton");
+                document
+                .getElementById("submitButton");
 
 
-            errorBox.textContent = "";
+            errorBox.textContent =
+                "";
 
 
             if (!title || !content) {
@@ -353,11 +449,13 @@ document
             const {
                 data: {
                     user
-                }
-            } = await supabaseClient.auth.getUser();
+                },
+                error: userError
+            } =
+                await supabaseClient.auth.getUser();
 
 
-            if (!user) {
+            if (userError || !user) {
 
                 errorBox.textContent =
                     "You must be logged in to post.";
@@ -366,47 +464,77 @@ document
             }
 
 
-            /* Get profile username */
+            /*
+             * Get current username.
+             */
 
             const {
                 data: profile,
                 error: profileError
-            } = await supabaseClient
+            } =
+                await supabaseClient
                 .from("profiles")
                 .select("username")
                 .eq("id", user.id)
-                .single();
+                .maybeSingle();
 
 
-            if (profileError || !profile) {
+            if (profileError) {
 
                 errorBox.textContent =
-                    "Could not find your profile.";
+                    "Could not load your profile: " +
+                    profileError.message;
 
                 return;
             }
 
 
-            button.disabled = true;
+            if (!profile) {
+
+                errorBox.textContent =
+                    "Your profile could not be found.";
+
+                return;
+            }
+
+
+            if (!profile.username) {
+
+                errorBox.textContent =
+                    "Your profile does not have a username.";
+
+                return;
+            }
+
+
+            button.disabled =
+                true;
 
             button.textContent =
                 "Publishing...";
 
 
-            const { error } =
+            const {
+                error
+            } =
                 await supabaseClient
                 .from("posts")
                 .insert({
 
-                    user_id: user.id,
+                    user_id:
+                        user.id,
 
-                    username: profile.username,
+                    username:
+                        profile.username,
 
-                    title: title,
+                    title:
+                        title,
 
-                    content: content,
+                    content:
+                        content,
 
-                    category: category
+                    category:
+                        category
 
                 });
 
@@ -417,7 +545,8 @@ document
                     "Error posting: " +
                     error.message;
 
-                button.disabled = false;
+                button.disabled =
+                    false;
 
                 button.textContent =
                     "Publish Post";
@@ -433,6 +562,21 @@ document
     );
 
 
+/* ESCAPE HTML */
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        text || "";
+
+    return div.innerHTML;
+
+}
+
+
 checkLogin();
 
 </script>
@@ -441,5 +585,4 @@ checkLogin();
 </html>
 ```
 
-```
 
