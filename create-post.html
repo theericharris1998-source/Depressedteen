@@ -1,4 +1,4 @@
-```html id="q8jv3a"
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,6 +34,14 @@
         .back {
             color: #333;
             text-decoration: none;
+        }
+
+        .username-display {
+            background: #f2f2f2;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 20px;
+            color: #555;
         }
 
         label {
@@ -126,17 +134,18 @@
 
         <h2 id="categoryTitle">New Post</h2>
 
+        <div
+            id="usernameDisplay"
+            class="username-display"
+        >
+            Posting as...
+        </div>
+
         <form id="postForm">
 
-            <label for="username">Username</label>
-
-            <input
-                type="text"
-                id="username"
-                required
-            >
-
-            <label for="title">Post Title</label>
+            <label for="title">
+                Post Title
+            </label>
 
             <input
                 type="text"
@@ -144,14 +153,19 @@
                 required
             >
 
-            <label for="content">Post</label>
+            <label for="content">
+                Post
+            </label>
 
             <textarea
                 id="content"
                 required
             ></textarea>
 
-            <button id="submitButton" type="submit">
+            <button
+                id="submitButton"
+                type="submit"
+            >
                 Publish Post
             </button>
 
@@ -222,7 +236,7 @@ document.getElementById("backLink").href =
     selected.page;
 
 
-/* Check whether the user is logged in */
+/* Check account */
 
 async function checkLogin() {
 
@@ -254,140 +268,169 @@ async function checkLogin() {
     }
 
 
+    /* Get profile */
+
+    const { data: profile, error } =
+        await supabaseClient
+        .from("profiles")
+        .select("username")
+        .eq("id", user.id)
+        .single();
+
+
+    if (error || !profile) {
+
+        loginMessage.style.display = "block";
+
+        loginMessage.innerHTML = `
+
+            <h2>Profile not found</h2>
+
+            <p>
+                Your account does not have a username yet.
+            </p>
+
+        `;
+
+        return;
+    }
+
+
     postArea.style.display = "block";
 
 
-    const savedUsername =
-        localStorage.getItem("forumUsername");
-
-
-    if (savedUsername) {
-
-        document.getElementById("username").value =
-            savedUsername;
-
-    }
+    document.getElementById("usernameDisplay").textContent =
+        "Posting as: " + profile.username;
 
 }
 
 
+/* Create post */
+
 document
     .getElementById("postForm")
-    .addEventListener("submit", async function(event) {
+    .addEventListener(
+        "submit",
+        async function(event) {
 
-        event.preventDefault();
-
-
-        const username =
-            document
-            .getElementById("username")
-            .value
-            .trim();
+            event.preventDefault();
 
 
-        const title =
-            document
-            .getElementById("title")
-            .value
-            .trim();
+            const title =
+                document
+                .getElementById("title")
+                .value
+                .trim();
 
 
-        const content =
-            document
-            .getElementById("content")
-            .value
-            .trim();
+            const content =
+                document
+                .getElementById("content")
+                .value
+                .trim();
 
 
-        const errorBox =
-            document.getElementById("error");
+            const errorBox =
+                document.getElementById("error");
 
 
-        const button =
-            document.getElementById("submitButton");
+            const button =
+                document.getElementById("submitButton");
 
 
-        errorBox.textContent = "";
+            errorBox.textContent = "";
 
 
-        if (!username || !title || !content) {
+            if (!title || !content) {
 
-            errorBox.textContent =
-                "Please fill out every field.";
+                errorBox.textContent =
+                    "Please fill out every field.";
 
-            return;
-        }
-
-
-        /* Save username for later */
-
-        localStorage.setItem(
-            "forumUsername",
-            username
-        );
-
-
-        button.disabled = true;
-
-        button.textContent = "Publishing...";
-
-
-        /* Double-check that the user is logged in */
-
-        const {
-            data: {
-                user
+                return;
             }
-        } = await supabaseClient.auth.getUser();
 
 
-        if (!user) {
+            const {
+                data: {
+                    user
+                }
+            } = await supabaseClient.auth.getUser();
 
-            errorBox.textContent =
-                "You must be logged in to post.";
 
-            button.disabled = false;
+            if (!user) {
 
-            button.textContent = "Publish Post";
+                errorBox.textContent =
+                    "You must be logged in to post.";
 
-            return;
+                return;
+            }
+
+
+            /* Get profile username */
+
+            const {
+                data: profile,
+                error: profileError
+            } = await supabaseClient
+                .from("profiles")
+                .select("username")
+                .eq("id", user.id)
+                .single();
+
+
+            if (profileError || !profile) {
+
+                errorBox.textContent =
+                    "Could not find your profile.";
+
+                return;
+            }
+
+
+            button.disabled = true;
+
+            button.textContent =
+                "Publishing...";
+
+
+            const { error } =
+                await supabaseClient
+                .from("posts")
+                .insert({
+
+                    user_id: user.id,
+
+                    username: profile.username,
+
+                    title: title,
+
+                    content: content,
+
+                    category: category
+
+                });
+
+
+            if (error) {
+
+                errorBox.textContent =
+                    "Error posting: " +
+                    error.message;
+
+                button.disabled = false;
+
+                button.textContent =
+                    "Publish Post";
+
+                return;
+            }
+
+
+            window.location.href =
+                selected.page;
+
         }
-
-
-        const { error } =
-            await supabaseClient
-            .from("posts")
-            .insert({
-
-                username: username,
-
-                title: title,
-
-                content: content,
-
-                category: category
-
-            });
-
-
-        if (error) {
-
-            errorBox.textContent =
-                "Error posting: " +
-                error.message;
-
-            button.disabled = false;
-
-            button.textContent = "Publish Post";
-
-            return;
-        }
-
-
-        window.location.href =
-            selected.page;
-
-});
+    );
 
 
 checkLogin();
@@ -396,5 +439,7 @@ checkLogin();
 
 </body>
 </html>
+```
+
 ```
 
