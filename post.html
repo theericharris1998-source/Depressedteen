@@ -293,7 +293,7 @@ async function setupReplyArea() {
             user
         }
     } = await supabaseClient.auth.getUser();
-
+console.log("Logged in user ID:", user?.id);
 
     /* Not logged in */
 
