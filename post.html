@@ -78,10 +78,10 @@
             background-color: #333;
             color: white;
             border: none;
-            padding: 12px 18px;
+            padding: 10px 16px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
         }
 
         button:hover {
@@ -93,6 +93,28 @@
             cursor: not-allowed;
         }
 
+        .edit-button {
+            background-color: #555;
+            margin-right: 8px;
+        }
+
+        .delete-button {
+            background-color: #b00020;
+        }
+
+        .delete-button:hover {
+            background-color: #d00030;
+        }
+
+        .save-button {
+            background-color: #333;
+            margin-right: 8px;
+        }
+
+        .cancel-button {
+            background-color: #777;
+        }
+
         a {
             color: #333;
         }
@@ -100,6 +122,11 @@
         #error {
             color: #b00020;
             margin-top: 15px;
+        }
+
+        .reply-error {
+            color: #b00020;
+            margin-top: 10px;
         }
 
         .login-box {
@@ -228,6 +255,18 @@ async function loadReplies() {
         document.getElementById("replies");
 
 
+    const {
+        data: {
+            user
+        }
+    } =
+        await supabaseClient.auth.getUser();
+
+
+    const currentUserId =
+        user ? user.id : null;
+
+
     const { data, error } =
         await supabaseClient
         .from("replies")
@@ -268,12 +307,47 @@ async function loadReplies() {
             "reply";
 
 
+        let buttons = "";
+
+
+        /*
+         * Only show Edit/Delete for
+         * the person who created the reply.
+         */
+
+        if (
+            currentUserId &&
+            reply.user_id === currentUserId
+        ) {
+
+            buttons = `
+
+                <div>
+
+                    <button
+                        class="edit-button"
+                        onclick="editReply(${reply.id})"
+                    >
+                        Edit
+                    </button>
+
+                    <button
+                        class="delete-button"
+                        onclick="deleteReply(${reply.id})"
+                    >
+                        Delete
+                    </button>
+
+                </div>
+
+            `;
+        }
+
+
         element.innerHTML = `
 
             <strong>
-                ${escapeHTML(
-                    reply.username || "Unknown"
-                )}
+                ${escapeHTML(reply.username || "Unknown")}
             </strong>
 
             <div class="date">
@@ -281,9 +355,18 @@ async function loadReplies() {
                 ${escapeHTML(reply.created_at)}
             </div>
 
-            <div class="content">
+            <div
+                class="content"
+                id="reply-content-${reply.id}"
+            >
                 ${escapeHTML(reply.content)}
             </div>
+
+            <div
+                id="reply-edit-${reply.id}"
+            ></div>
+
+            ${buttons}
 
         `;
 
@@ -291,6 +374,198 @@ async function loadReplies() {
         repliesContainer.appendChild(element);
 
     });
+}
+
+
+/* EDIT REPLY */
+
+async function editReply(replyId) {
+
+    const {
+        data: reply,
+        error
+    } =
+        await supabaseClient
+        .from("replies")
+        .select("*")
+        .eq("id", replyId)
+        .single();
+
+
+    if (error || !reply) {
+
+        alert("Could not find that reply.");
+
+        return;
+    }
+
+
+    const contentElement =
+        document.getElementById(
+            "reply-content-" + replyId
+        );
+
+
+    const editArea =
+        document.getElementById(
+            "reply-edit-" + replyId
+        );
+
+
+    contentElement.style.display =
+        "none";
+
+
+    editArea.innerHTML = `
+
+        <textarea
+            id="edit-text-${replyId}"
+        >${escapeHTML(reply.content)}</textarea>
+
+        <button
+            class="save-button"
+            onclick="saveReply(${replyId})"
+        >
+            Save
+        </button>
+
+        <button
+            class="cancel-button"
+            onclick="loadReplies()"
+        >
+            Cancel
+        </button>
+
+        <div
+            class="reply-error"
+            id="edit-error-${replyId}"
+        ></div>
+
+    `;
+}
+
+
+/* SAVE EDITED REPLY */
+
+async function saveReply(replyId) {
+
+    const textarea =
+        document.getElementById(
+            "edit-text-" + replyId
+        );
+
+
+    const errorBox =
+        document.getElementById(
+            "edit-error-" + replyId
+        );
+
+
+    const newContent =
+        textarea.value.trim();
+
+
+    if (!newContent) {
+
+        errorBox.textContent =
+            "Reply cannot be empty.";
+
+        return;
+    }
+
+
+    const {
+        data: {
+            user
+        }
+    } =
+        await supabaseClient.auth.getUser();
+
+
+    if (!user) {
+
+        errorBox.textContent =
+            "You must be logged in.";
+
+        return;
+    }
+
+
+    const { error } =
+        await supabaseClient
+        .from("replies")
+        .update({
+            content: newContent
+        })
+        .eq("id", replyId)
+        .eq("user_id", user.id);
+
+
+    if (error) {
+
+        errorBox.textContent =
+            "Error editing reply: " +
+            error.message;
+
+        return;
+    }
+
+
+    await loadReplies();
+}
+
+
+/* DELETE REPLY */
+
+async function deleteReply(replyId) {
+
+    const confirmed =
+        confirm(
+            "Are you sure you want to delete this reply?"
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    const {
+        data: {
+            user
+        }
+    } =
+        await supabaseClient.auth.getUser();
+
+
+    if (!user) {
+
+        alert("You must be logged in.");
+
+        return;
+    }
+
+
+    const { error } =
+        await supabaseClient
+        .from("replies")
+        .delete()
+        .eq("id", replyId)
+        .eq("user_id", user.id);
+
+
+    if (error) {
+
+        alert(
+            "Error deleting reply: " +
+            error.message
+        );
+
+        return;
+    }
+
+
+    await loadReplies();
 }
 
 
@@ -309,8 +584,6 @@ async function setupReplyArea() {
     } =
         await supabaseClient.auth.getUser();
 
-
-    /* NOT LOGGED IN */
 
     if (!user) {
 
@@ -336,11 +609,6 @@ async function setupReplyArea() {
     }
 
 
-    /*
-     * Get username directly from
-     * Supabase user metadata.
-     */
-
     const username =
         user.user_metadata?.username;
 
@@ -357,10 +625,6 @@ async function setupReplyArea() {
                     Your account does not have a username.
                 </p>
 
-                <a href="account.html">
-                    Go to My Account
-                </a>
-
             </div>
 
         `;
@@ -368,8 +632,6 @@ async function setupReplyArea() {
         return;
     }
 
-
-    /* SHOW REPLY FORM */
 
     replyArea.innerHTML = `
 
