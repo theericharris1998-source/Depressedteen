@@ -156,7 +156,7 @@ const postId =
     Number(params.get("id"));
 
 
-/* Load the post */
+/* LOAD POST */
 
 async function loadPost() {
 
@@ -202,6 +202,7 @@ async function loadPost() {
 
     `;
 
+
     const categoryPages = {
 
         general: "general.html",
@@ -212,18 +213,20 @@ async function loadPost() {
 
     };
 
+
     document.getElementById("backLink").href =
         categoryPages[data.category] ||
         "index.html";
 }
 
 
-/* Load replies */
+/* LOAD REPLIES */
 
 async function loadReplies() {
 
     const repliesContainer =
         document.getElementById("replies");
+
 
     const { data, error } =
         await supabaseClient
@@ -234,6 +237,7 @@ async function loadReplies() {
             ascending: true
         });
 
+
     if (error) {
 
         repliesContainer.innerHTML =
@@ -241,6 +245,7 @@ async function loadReplies() {
 
         return;
     }
+
 
     if (!data || data.length === 0) {
 
@@ -250,23 +255,30 @@ async function loadReplies() {
         return;
     }
 
+
     repliesContainer.innerHTML = "";
+
 
     data.forEach(function(reply) {
 
         const element =
             document.createElement("div");
 
-        element.className = "reply";
+        element.className =
+            "reply";
+
 
         element.innerHTML = `
 
             <strong>
-                ${escapeHTML(reply.username || "Unknown")}
+                ${escapeHTML(
+                    reply.username || "Unknown"
+                )}
             </strong>
 
             <div class="date">
-                Created: ${escapeHTML(reply.created_at)}
+                Created:
+                ${escapeHTML(reply.created_at)}
             </div>
 
             <div class="content">
@@ -275,27 +287,30 @@ async function loadReplies() {
 
         `;
 
+
         repliesContainer.appendChild(element);
 
     });
 }
 
 
-/* Set up reply area */
+/* SET UP REPLY AREA */
 
 async function setupReplyArea() {
 
     const replyArea =
         document.getElementById("replyArea");
 
+
     const {
         data: {
             user
         }
-    } = await supabaseClient.auth.getUser();
-console.log("Logged in user ID:", user?.id);
+    } =
+        await supabaseClient.auth.getUser();
 
-    /* Not logged in */
+
+    /* NOT LOGGED IN */
 
     if (!user) {
 
@@ -321,27 +336,30 @@ console.log("Logged in user ID:", user?.id);
     }
 
 
-    /* Find the user's profile */
+    /*
+     * Get username directly from
+     * Supabase user metadata.
+     */
 
-    const { data: profile, error } =
-        await supabaseClient
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .single();
+    const username =
+        user.user_metadata?.username;
 
 
-    if (error || !profile) {
+    if (!username) {
 
         replyArea.innerHTML = `
 
             <div class="login-box">
 
-                <h2>Profile not found</h2>
+                <h2>Username not found</h2>
 
                 <p>
-                    Your account does not have a username yet.
+                    Your account does not have a username.
                 </p>
+
+                <a href="account.html">
+                    Go to My Account
+                </a>
 
             </div>
 
@@ -351,13 +369,15 @@ console.log("Logged in user ID:", user?.id);
     }
 
 
-    /* Show reply form */
+    /* SHOW REPLY FORM */
 
     replyArea.innerHTML = `
 
         <div class="reply-box">
 
-            <h2>Reply as ${escapeHTML(profile.username)}</h2>
+            <h2>
+                Reply as ${escapeHTML(username)}
+            </h2>
 
             <form id="replyForm">
 
@@ -365,6 +385,7 @@ console.log("Logged in user ID:", user?.id);
                     id="content"
                     placeholder="Write your reply..."
                     required
+                    maxlength="10000"
                 ></textarea>
 
                 <button
@@ -392,11 +413,12 @@ console.log("Logged in user ID:", user?.id);
 }
 
 
-/* Submit reply */
+/* SUBMIT REPLY */
 
 async function submitReply(event) {
 
     event.preventDefault();
+
 
     const content =
         document
@@ -404,8 +426,10 @@ async function submitReply(event) {
         .value
         .trim();
 
+
     const errorBox =
         document.getElementById("error");
+
 
     const button =
         document.getElementById("replyButton");
@@ -427,7 +451,8 @@ async function submitReply(event) {
         data: {
             user
         }
-    } = await supabaseClient.auth.getUser();
+    } =
+        await supabaseClient.auth.getUser();
 
 
     if (!user) {
@@ -439,20 +464,14 @@ async function submitReply(event) {
     }
 
 
-    /* Get the username from the profile */
-
-    const { data: profile, error: profileError } =
-        await supabaseClient
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .single();
+    const username =
+        user.user_metadata?.username;
 
 
-    if (profileError || !profile) {
+    if (!username) {
 
         errorBox.textContent =
-            "Could not find your profile.";
+            "Your account does not have a username.";
 
         return;
     }
@@ -469,13 +488,17 @@ async function submitReply(event) {
         .from("replies")
         .insert({
 
-            post_id: postId,
+            post_id:
+                postId,
 
-            user_id: user.id,
+            user_id:
+                user.id,
 
-            username: profile.username,
+            username:
+                username,
 
-            content: content
+            content:
+                content
 
         });
 
@@ -507,11 +530,10 @@ async function submitReply(event) {
 
 
     await loadReplies();
-
 }
 
 
-/* Prevent HTML injection */
+/* ESCAPE HTML */
 
 function escapeHTML(text) {
 
@@ -519,13 +541,13 @@ function escapeHTML(text) {
         document.createElement("div");
 
     div.textContent =
-        text;
+        text || "";
 
     return div.innerHTML;
 }
 
 
-/* Start */
+/* START */
 
 loadPost();
 
