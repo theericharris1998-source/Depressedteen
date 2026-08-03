@@ -1,77 +1,123 @@
-```html
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>My Forum</title>
+```
+<title>My Forum</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-            margin: 0;
-            padding: 0;
-        }
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+        margin: 0;
+    }
 
-        header {
-            background-color: #333;
-            color: white;
-            padding: 25px;
-            text-align: center;
-        }
+    header {
+        background-color: #333;
+        color: white;
+        padding: 25px;
+        text-align: center;
+    }
 
-        .container {
-            max-width: 800px;
-            margin: 30px auto;
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-        }
+    header h1 {
+        margin: 0;
+    }
 
-        #accountArea {
-            margin-bottom: 20px;
-        }
+    header p {
+        margin-bottom: 0;
+    }
 
-        .account-button {
-            display: inline-block;
-            background-color: #333;
-            color: white;
-            padding: 12px 18px;
-            border-radius: 6px;
-            text-decoration: none;
-        }
+    .container {
+        max-width: 800px;
+        margin: 30px auto;
+        padding: 25px;
+    }
 
-        .account-button:hover {
-            background-color: #555;
-        }
+    .top-bar {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: right;
+    }
 
-        .category {
-            display: block;
-            padding: 20px;
-            margin: 15px 0;
-            background-color: #f5f5f5;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #222;
-        }
+    .top-bar a {
+        color: #333;
+        text-decoration: none;
+        margin-left: 15px;
+    }
 
-        .category:hover {
-            background-color: #e5e5e5;
-        }
+    .top-bar a:hover {
+        text-decoration: underline;
+    }
 
-        .category h2 {
-            margin: 0 0 8px 0;
-        }
+    .category {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+    }
 
-        .category p {
-            margin: 0;
-            color: #666;
-        }
-    </style>
+    .category h2 {
+        margin-top: 0;
+    }
+
+    .category a {
+        color: #333;
+        text-decoration: none;
+    }
+
+    .category a:hover {
+        text-decoration: underline;
+    }
+
+    .latest {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 30px;
+        border: 1px solid #ddd;
+    }
+
+    .post {
+        border-top: 1px solid #ddd;
+        padding: 15px 0;
+    }
+
+    .post:first-child {
+        border-top: none;
+    }
+
+    .post h3 {
+        margin: 0 0 8px;
+    }
+
+    .post h3 a {
+        color: #333;
+        text-decoration: none;
+    }
+
+    .post h3 a:hover {
+        text-decoration: underline;
+    }
+
+    .post-info {
+        color: #777;
+        font-size: 14px;
+    }
+
+    #status {
+        color: #777;
+    }
+</style>
+```
+
 </head>
 
 <body>
@@ -83,26 +129,74 @@
 
 <div class="container">
 
-    <div id="accountArea">
-        Loading...
-    </div>
-
-    <h2>Forum Categories</h2>
-
-    <a class="category" href="general.html">
-        <h2>General Discussion</h2>
-        <p>Talk about anything.</p>
+```
+<div class="top-bar">
+    <a href="login.html" id="accountLink">
+        Login
     </a>
+</div>
 
-    <a class="category" href="gaming.html">
-        <h2>Gaming</h2>
-        <p>Discuss games, gaming news, and everything gaming-related.</p>
-    </a>
 
-    <a class="category" href="off-topic.html">
-        <h2>Off-Topic</h2>
-        <p>Talk about things that don't fit anywhere else.</p>
-    </a>
+<h2>Forum Categories</h2>
+
+
+<div class="category">
+
+    <h2>
+        <a href="general.html">
+            General Discussion
+        </a>
+    </h2>
+
+    <p>
+        Talk about anything.
+    </p>
+
+</div>
+
+
+<div class="category">
+
+    <h2>
+        <a href="gaming.html">
+            Gaming
+        </a>
+    </h2>
+
+    <p>
+        Discuss games, gaming news, and everything gaming-related.
+    </p>
+
+</div>
+
+
+<div class="category">
+
+    <h2>
+        <a href="off-topic.html">
+            Off-Topic
+        </a>
+    </h2>
+
+    <p>
+        Talk about things that don't fit anywhere else.
+    </p>
+
+</div>
+
+
+<div class="latest">
+
+    <h2>Latest Posts</h2>
+
+    <p id="status">
+        Loading posts...
+    </p>
+
+    <div id="posts"></div>
+
+</div>
+```
 
 </div>
 
@@ -121,54 +215,193 @@ const supabaseClient =
     );
 
 
-async function updateAccountArea() {
+/* Account link */
 
-    const accountArea =
-        document.getElementById("accountArea");
+async function checkAccount() {
 
+    const accountLink =
+        document.getElementById("accountLink");
 
     const {
         data: {
             user
         }
-    } = await supabaseClient.auth.getUser();
+    } =
+        await supabaseClient.auth.getUser();
 
 
     if (user) {
 
-        accountArea.innerHTML = `
+        accountLink.textContent =
+            "My Account";
 
-            <a
-                class="account-button"
-                href="account.html"
-            >
-                My Account
-            </a>
-
-        `;
+        accountLink.href =
+            "account.html";
 
     } else {
 
-        accountArea.innerHTML = `
+        accountLink.textContent =
+            "Login";
 
-            <a
-                class="account-button"
-                href="login.html"
-            >
-                Log In / Create Account
-            </a>
-
-        `;
+        accountLink.href =
+            "login.html";
 
     }
+
 }
 
 
-updateAccountArea();
+/* Load latest posts */
+
+async function loadLatestPosts() {
+
+    const postsContainer =
+        document.getElementById("posts");
+
+    const status =
+        document.getElementById("status");
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+        .from("posts")
+        .select(
+            "id, title, username, category, created_at"
+        )
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        )
+        .limit(5);
+
+
+    if (error) {
+
+        status.textContent =
+            "Could not load posts.";
+
+        console.error(error);
+
+        return;
+    }
+
+
+    status.textContent = "";
+
+
+    if (!data || data.length === 0) {
+
+        postsContainer.innerHTML = `
+            <p>No posts yet. Be the first!</p>
+        `;
+
+        return;
+    }
+
+
+    const categoryNames = {
+
+        general:
+            "General Discussion",
+
+        gaming:
+            "Gaming",
+
+        "off-topic":
+            "Off-Topic"
+
+    };
+
+
+    data.forEach(function(post) {
+
+        const element =
+            document.createElement("div");
+
+        element.className =
+            "post";
+
+
+        const categoryName =
+            categoryNames[post.category] ||
+            post.category;
+
+
+        element.innerHTML = `
+
+            <h3>
+
+                <a href="post.html?id=${post.id}">
+                    ${escapeHTML(post.title)}
+                </a>
+
+            </h3>
+
+            <div class="post-info">
+
+                Posted by
+                ${escapeHTML(post.username || "Unknown")}
+
+                ·
+
+                ${escapeHTML(categoryName)}
+
+                ·
+
+                ${formatDate(post.created_at)}
+
+            </div>
+
+        `;
+
+
+        postsContainer.appendChild(element);
+
+    });
+
+}
+
+
+/* Format date */
+
+function formatDate(dateString) {
+
+    const date =
+        new Date(dateString);
+
+
+    return date.toLocaleString();
+
+}
+
+
+/* Prevent HTML injection */
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        text || "";
+
+    return div.innerHTML;
+
+}
+
+
+checkAccount();
+
+loadLatestPosts();
 
 </script>
 
 </body>
 </html>
-```
+
 
