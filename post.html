@@ -49,6 +49,11 @@
             font-size: 14px;
         }
 
+        .username a {
+            color: #333;
+            font-weight: bold;
+        }
+
         .date {
             color: #888;
             font-size: 13px;
@@ -205,6 +210,9 @@ async function loadPost() {
         return;
     }
 
+    const username =
+        data.username || "Unknown";
+
     postContainer.innerHTML = `
 
         <div class="post">
@@ -214,7 +222,10 @@ async function loadPost() {
             </h1>
 
             <div class="username">
-                Posted by ${escapeHTML(data.username || "Unknown")}
+                Posted by
+                <a href="user.html?username=${encodeURIComponent(username)}">
+                    ${escapeHTML(username)}
+                </a>
             </div>
 
             <div class="date">
@@ -310,11 +321,6 @@ async function loadReplies() {
         let buttons = "";
 
 
-        /*
-         * Only show Edit/Delete for
-         * the person who created the reply.
-         */
-
         if (
             currentUserId &&
             reply.user_id === currentUserId
@@ -344,10 +350,16 @@ async function loadReplies() {
         }
 
 
+        const username =
+            reply.username || "Unknown";
+
+
         element.innerHTML = `
 
             <strong>
-                ${escapeHTML(reply.username || "Unknown")}
+                <a href="user.html?username=${encodeURIComponent(username)}">
+                    ${escapeHTML(username)}
+                </a>
             </strong>
 
             <div class="date">
@@ -822,5 +834,6 @@ setupReplyArea();
 </body>
 </html>
 ```
+
 
 
