@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+```
+<title>User Profile - My Forum</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+        margin: 0;
+    }
+
+    header {
+        background-color: #333;
+        color: white;
+        padding: 25px;
+        text-align: center;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 30px auto;
+        padding: 25px;
+    }
+
+    .box {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .username {
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .info {
+        color: #777;
+        margin-top: 8px;
+    }
+
+    .post {
+        border-top: 1px solid #ddd;
+        padding: 15px 0;
+    }
+
+    .post:first-child {
+        border-top: none;
+    }
+
+    .post-title {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .post-title a {
+        color: #333;
+        text-decoration: none;
+    }
+
+    .post-title a:hover {
+        text-decoration: underline;
+    }
+
+    .post-info {
+        color: #777;
+        font-size: 14px;
+        margin-top: 6px;
+    }
+
+    .back {
+        color: #333;
+        text-decoration: none;
+        display: inline-block;
+        margin-bottom: 20px;
+    }
+
+    .back:hover {
+        text-decoration: underline;
+    }
+
+    #status {
+        color: #777;
+    }
+</style>
+```
+
+</head>
+
+<body>
+
+<header>
+    <h1>My Forum</h1>
+</header>
+
+<div class="container">
+
+```
+<a class="back" href="index.html">
+    ← Back to Forum
+</a>
+
+<div class="box" id="profile">
+    <p id="status">
+        Loading profile...
+    </p>
+</div>
+
+<div class="box">
+
+    <h2>Posts</h2>
+
+    <div id="posts">
+        <p>Loading posts...</p>
+    </div>
+
+</div>
+```
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+    "https://oumfxwatreftjyahiplr.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_DXNKHiVn5QV8DQj3ydTYlQ_zj9EZZTa";
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+const params =
+    new URLSearchParams(
+        window.location.search
+    );
+
+const username =
+    params.get("username");
+
+
+async function loadProfile() {
+
+    const profileBox =
+        document.getElementById("profile");
+
+    const postsContainer =
+        document.getElementById("posts");
+
+
+    if (!username) {
+
+        profileBox.innerHTML =
+            "<p>User not found.</p>";
+
+        postsContainer.innerHTML = "";
+
+        return;
+    }
+
+
+    /*
+     * Find posts belonging to this username.
+     */
+
+    const {
+        data: posts,
+        error
+    } =
+        await supabaseClient
+        .from("posts")
+        .select(
+            "id, title, category, created_at, username"
+        )
+        .eq(
+            "username",
+            username
+        )
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        );
+
+
+    if (error) {
+
+        profileBox.innerHTML =
+            "<p>Could not load profile.</p>";
+
+        postsContainer.innerHTML = "";
+
+        console.error(error);
+
+        return;
+    }
+
+
+    /*
+     * Show username.
+     */
+
+    profileBox.innerHTML = `
+
+        <div class="username">
+            ${escapeHTML(username)}
+        </div>
+
+        <div class="info">
+            ${posts.length}
+            post${posts.length === 1 ? "" : "s"}
+        </div>
+
+    `;
+
+
+    /*
+     * Show posts.
+     */
+
+    if (!posts || posts.length === 0) {
+
+        postsContainer.innerHTML =
+            "<p>This user hasn't made any posts yet.</p>";
+
+        return;
+    }
+
+
+    postsContainer.innerHTML = "";
+
+
+    posts.forEach(function(post) {
+
+        const element =
+            document.createElement("div");
+
+        element.className =
+            "post";
+
+
+        element.innerHTML = `
+
+            <div class="post-title">
+
+                <a href="post.html?id=${post.id}">
+                    ${escapeHTML(post.title)}
+                </a>
+
+            </div>
+
+            <div class="post-info">
+
+                ${escapeHTML(post.category)}
+
+                ·
+
+                ${formatDate(post.created_at)}
+
+            </div>
+
+        `;
+
+
+        postsContainer.appendChild(element);
+
+    });
+
+}
+
+
+/* Format date */
+
+function formatDate(dateString) {
+
+    return new Date(
+        dateString
+    ).toLocaleDateString();
+
+}
+
+
+/* Prevent HTML injection */
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        text || "";
+
+    return div.innerHTML;
+
+}
+
+
+loadProfile();
+
+</script>
+
+</body>
+</html>
