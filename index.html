@@ -56,6 +56,41 @@
         text-decoration: underline;
     }
 
+    .search-box {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border: 1px solid #ddd;
+    }
+
+    .search-row {
+        display: flex;
+        gap: 10px;
+    }
+
+    #searchInput {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 15px;
+        box-sizing: border-box;
+    }
+
+    #searchButton {
+        padding: 12px 18px;
+        background: #333;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    #searchButton:hover {
+        background: #555;
+    }
+
     .category {
         background: white;
         padding: 20px;
@@ -115,6 +150,14 @@
     #status {
         color: #777;
     }
+
+    #searchResults {
+        margin-top: 15px;
+    }
+
+    .no-results {
+        color: #777;
+    }
 </style>
 ```
 
@@ -134,6 +177,29 @@
     <a href="login.html" id="accountLink">
         Login
     </a>
+</div>
+
+
+<div class="search-box">
+
+    <h2>Search Posts</h2>
+
+    <div class="search-row">
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Search posts..."
+        >
+
+        <button id="searchButton">
+            Search
+        </button>
+
+    </div>
+
+    <div id="searchResults"></div>
+
 </div>
 
 
@@ -296,27 +362,107 @@ async function loadLatestPosts() {
 
     if (!data || data.length === 0) {
 
-        postsContainer.innerHTML = `
-            <p>No posts yet. Be the first!</p>
-        `;
+        postsContainer.innerHTML =
+            "<p>No posts yet. Be the first!</p>";
 
         return;
     }
 
 
-    const categoryNames = {
+    renderPosts(
+        data,
+        postsContainer
+    );
 
-        general:
-            "General Discussion",
+}
 
-        gaming:
-            "Gaming",
 
-        "off-topic":
-            "Off-Topic"
+/* Search */
 
-    };
+async function searchPosts() {
 
+    const input =
+        document.getElementById("searchInput");
+
+    const results =
+        document.getElementById("searchResults");
+
+
+    const search =
+        input.value.trim();
+
+
+    if (!search) {
+
+        results.innerHTML = "";
+
+        return;
+    }
+
+
+    results.innerHTML =
+        "<p>Searching...</p>";
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+        .from("posts")
+        .select(
+            "id, title, username, category, created_at, content"
+        )
+        .or(
+            `title.ilike.%${search}%,content.ilike.%${search}%`
+        )
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        )
+        .limit(20);
+
+
+    if (error) {
+
+        results.innerHTML =
+            "<p>Could not search posts.</p>";
+
+        console.error(error);
+
+        return;
+    }
+
+
+    if (!data || data.length === 0) {
+
+        results.innerHTML =
+            "<p class='no-results'>No posts found.</p>";
+
+        return;
+    }
+
+
+    results.innerHTML =
+        "<h3>Search Results</h3>";
+
+
+    renderPosts(
+        data,
+        results
+    );
+
+}
+
+
+/* Display posts */
+
+function renderPosts(
+    data,
+    container
+) {
 
     data.forEach(function(post) {
 
@@ -325,6 +471,20 @@ async function loadLatestPosts() {
 
         element.className =
             "post";
+
+
+        const categoryNames = {
+
+            general:
+                "General Discussion",
+
+            gaming:
+                "Gaming",
+
+            "off-topic":
+                "Off-Topic"
+
+        };
 
 
         const categoryName =
@@ -360,11 +520,39 @@ async function loadLatestPosts() {
         `;
 
 
-        postsContainer.appendChild(element);
+        container.appendChild(element);
 
     });
 
 }
+
+
+/* Search button */
+
+document
+    .getElementById("searchButton")
+    .addEventListener(
+        "click",
+        searchPosts
+    );
+
+
+/* Press Enter to search */
+
+document
+    .getElementById("searchInput")
+    .addEventListener(
+        "keydown",
+        function(event) {
+
+            if (event.key === "Enter") {
+
+                searchPosts();
+
+            }
+
+        }
+    );
 
 
 /* Format date */
@@ -373,7 +561,6 @@ function formatDate(dateString) {
 
     const date =
         new Date(dateString);
-
 
     return date.toLocaleString();
 
